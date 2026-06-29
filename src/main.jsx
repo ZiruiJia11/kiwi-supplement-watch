@@ -1,25 +1,30 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
 import {
   Activity,
-  AlarmClock,
   Bell,
+  Check,
   CheckCircle2,
   ChevronDown,
+  Download,
   ExternalLink,
-  Filter,
-  LineChart,
+  Eye,
+  FileClock,
+  Globe2,
+  HeartPulse,
   Mail,
   Search,
   Send,
+  Settings,
   ShieldCheck,
   SlidersHorizontal,
   Star,
   Store,
-  Terminal,
   TrendingDown,
+  TrendingUp,
   Wifi,
   WifiOff,
+  X,
 } from "lucide-react";
 import { getDashboardData } from "./lib/liveData.js";
 import {
@@ -33,7 +38,8 @@ import {
 import "./styles.css";
 
 const dashboardData = getDashboardData();
-const priorityCategories = [
+
+const CATEGORY_ORDER = [
   "Fish oil",
   "Eye health",
   "Sunscreen",
@@ -48,516 +54,870 @@ const priorityCategories = [
   "Other",
 ];
 
-const zhCategory = {
+const CATEGORY_ZH = {
   "All categories": "全部分类",
   "Fish oil": "鱼油 / Omega-3",
   "Eye health": "护眼 / 叶黄素",
-  "Sunscreen": "防晒霜 / SPF",
-  "Vitamins": "维生素",
-  "Probiotics": "益生菌 / 肠道",
+  Sunscreen: "防晒 / SPF",
+  Vitamins: "维生素",
+  Probiotics: "益生菌",
   "Calcium & bone": "钙 / 骨骼",
   "Sleep support": "睡眠支持",
   "Liver support": "护肝",
   "Heart & CoQ10": "心血管 / CoQ10",
   "Beauty collagen": "美容胶原",
   "Joint support": "关节支持",
-  "Other": "其它",
+  Other: "其他",
 };
 
-const zh = {
-  navDeals: "折扣",
-  navHistory: "价格历史",
-  navStores: "商店",
-  navAlerts: "提醒",
-  navSources: "数据来源",
-  title: "健康品折扣监控",
-  subtitle: "优先监测适合中国市场的热门品类，以及鱼油、护眼、防晒霜和维生素。",
-  search: "搜索品牌、商品、商店",
-  lastDataset: "最近成功数据",
-  notFetched: "尚未抓取",
-  sourceMode: "数据模式",
-  liveFetch: "真实商店抓取",
-  seededMode: "首次抓取前使用示例数据",
-  refreshCommand: "刷新命令",
-  trackedProducts: "追踪商品",
-  activeDeals: "有效折扣",
-  priceDrops: "降价商品",
-  alertsReady: "待提醒",
-  store: "商店",
-  category: "分类",
-  verifiedOnly: "只看已验证来源",
-  discountRadar: "折扣雷达",
-  rowsFrom: "条来自 NZ 商店的数据",
-  exportCsv: "导出 CSV",
-  product: "商品",
-  now: "现价",
-  was: "原价",
-  drop: "折扣",
-  priority: "优先级",
-  unit: "单位价",
-  source: "来源",
-  sourceHealth: "来源状态",
-  parserStatus: "解析器状态",
-  storeComparison: "商店对比",
-  bestPrice: "当前最低价",
-  priceHistory: "价格历史",
-  trend: "最低价与当前趋势",
-  currentPrice: "当前价格",
-  alertThreshold: "提醒阈值",
-  priceMovement: "价格浮动记录",
-  latestMove: "最近变动",
-  lowestPrice: "最低价",
-  highestPrice: "最高价",
-  averagePrice: "平均价",
-  noChange: "暂无变化",
-  cheaper: "降价",
-  dearer: "涨价",
-  date: "日期",
-  price: "价格",
-  alertRules: "提醒规则",
-  notifyText: "当收藏商品达到折扣阈值时提醒",
-  discountThreshold: "折扣阈值",
-  emailDigest: "邮件摘要",
-  telegramAlert: "Telegram 提醒",
-  matchingRows: "条符合提醒条件",
-  saveSettings: "保存提醒设置",
-  sourceNote: "每条记录都保留来源链接、抓取时间、解析器名称和状态。运行实时采集即可刷新真实数据。",
-  runRefresh: "运行 npm.cmd run refresh 生成实时来源状态。",
+const COPY = {
+  en: {
+    appName: "Kiwi Supplement Watch",
+    strapline: "NZ supplement price monitor",
+    deals: "Deals",
+    watchlist: "Watchlist",
+    history: "History",
+    stores: "Stores",
+    alerts: "Alerts",
+    sources: "Sources",
+    search: "Search brand, product, store",
+    liveData: "Live data",
+    demoData: "Demo data",
+    lastChecked: "Last checked",
+    products: "Products",
+    healthySources: "Healthy sources",
+    activeAlerts: "Alert matches",
+    tracked: "Tracked",
+    allStores: "All stores",
+    allCategories: "All categories",
+    filters: "Filters",
+    verifiedOnly: "Verified only",
+    discountOnly: "Discounted only",
+    sortBy: "Sort by",
+    highestDiscount: "Highest discount",
+    lowestPrice: "Lowest price",
+    priority: "Priority",
+    latestMove: "Latest move",
+    exportCsv: "Export CSV",
+    product: "Product",
+    store: "Store",
+    now: "Now",
+    was: "Was",
+    discount: "Discount",
+    movement: "Movement",
+    source: "Source",
+    watch: "Watch",
+    selectedProduct: "Selected product",
+    bestPrice: "Best price",
+    storeComparison: "Store comparison",
+    priceMovement: "Price movement",
+    recentRecords: "Recent records",
+    averagePrice: "Average",
+    highestPrice: "Highest",
+    alertRule: "Alert rule",
+    threshold: "Threshold",
+    email: "Email",
+    telegram: "Telegram",
+    saveSettings: "Save settings",
+    settings: "Settings",
+    preferences: "Preferences",
+    language: "Language",
+    defaultSort: "Default sort",
+    historyRange: "History range",
+    days7: "7 days",
+    days30: "30 days",
+    days60: "60 days",
+    savePreferences: "Save preferences",
+    close: "Close",
+    noRows: "No matching products",
+    noHistory: "No price history yet",
+    noWatchlist: "No watched products yet. Star products from Deals to track them here.",
+    sourcesIntro: "Parser health from the latest live collection.",
+    records: "records",
+    parser: "Parser",
+    status: "Status",
+    checkedAt: "Checked at",
+    ok: "OK",
+    failed: "Failed",
+    saved: "Saved",
+    openSource: "Open source",
+    lower: "down",
+    higher: "up",
+    unchanged: "flat",
+    localOnly: "Saved in this browser",
+  },
+  zh: {
+    appName: "Kiwi Supplement Watch",
+    strapline: "新西兰保健品价格监控",
+    deals: "折扣列表",
+    watchlist: "关注商品",
+    history: "价格记录",
+    stores: "商店对比",
+    alerts: "提醒",
+    sources: "数据来源",
+    search: "搜索品牌、商品、商店",
+    liveData: "真实抓取",
+    demoData: "示例数据",
+    lastChecked: "最近更新",
+    products: "商品",
+    healthySources: "正常来源",
+    activeAlerts: "符合提醒",
+    tracked: "关注中",
+    allStores: "全部商店",
+    allCategories: "全部分类",
+    filters: "筛选",
+    verifiedOnly: "只看真实来源",
+    discountOnly: "只看折扣",
+    sortBy: "排序",
+    highestDiscount: "折扣最高",
+    lowestPrice: "价格最低",
+    priority: "优先级",
+    latestMove: "最近变动",
+    exportCsv: "导出 CSV",
+    product: "商品",
+    store: "商店",
+    now: "现价",
+    was: "原价",
+    discount: "折扣",
+    movement: "浮动",
+    source: "来源",
+    watch: "关注",
+    selectedProduct: "商品详情",
+    bestPrice: "当前最低价",
+    storeComparison: "商店价格对比",
+    priceMovement: "价格浮动",
+    recentRecords: "最近记录",
+    averagePrice: "平均价",
+    highestPrice: "最高价",
+    alertRule: "提醒规则",
+    threshold: "阈值",
+    email: "邮件",
+    telegram: "Telegram",
+    saveSettings: "保存设置",
+    settings: "设置",
+    preferences: "偏好设置",
+    language: "语言",
+    defaultSort: "默认排序",
+    historyRange: "记录范围",
+    days7: "7 天",
+    days30: "30 天",
+    days60: "60 天",
+    savePreferences: "保存偏好",
+    close: "关闭",
+    noRows: "没有符合条件的商品",
+    noHistory: "还没有价格记录",
+    noWatchlist: "还没有关注商品。在折扣列表里点星标即可关注。",
+    sourcesIntro: "最近一次真实抓取的解析器状态。",
+    records: "条记录",
+    parser: "解析器",
+    status: "状态",
+    checkedAt: "抓取时间",
+    ok: "正常",
+    failed: "失败",
+    saved: "已保存",
+    openSource: "打开来源",
+    lower: "降价",
+    higher: "涨价",
+    unchanged: "持平",
+    localOnly: "已保存到本机浏览器",
+  },
 };
 
-const en = {
-  navDeals: "Deals",
-  navHistory: "Price history",
-  navStores: "Stores",
-  navAlerts: "Alerts",
-  navSources: "Sources",
-  title: "Health deal monitor",
-  subtitle: "Priority NZ price checks for Chinese-market favourites plus fish oil, eye health, sunscreen, and vitamins.",
-  search: "Search brand, product, store",
-  lastDataset: "Last successful dataset",
-  notFetched: "Not fetched yet",
-  sourceMode: "Source mode",
-  liveFetch: "Live retailer fetch",
-  seededMode: "Seeded demo until first fetch",
-  refreshCommand: "Refresh command",
-  trackedProducts: "Tracked products",
-  activeDeals: "Active deals",
-  priceDrops: "Price drops",
-  alertsReady: "Alerts ready",
-  store: "Store",
-  category: "Category",
-  verifiedOnly: "Only verified sources",
-  discountRadar: "Discount radar",
-  rowsFrom: "rows from monitored NZ retailers",
-  exportCsv: "Export CSV",
-  product: "Product",
-  now: "Now",
-  was: "Was",
-  drop: "Drop",
-  priority: "Priority",
-  unit: "Unit",
-  source: "Source",
-  sourceHealth: "Source health",
-  parserStatus: "parser status",
-  storeComparison: "Store comparison",
-  bestPrice: "Best current price",
-  priceHistory: "Price history",
-  trend: "Lowest vs current trend",
-  currentPrice: "Current price",
-  alertThreshold: "Alert threshold",
-  priceMovement: "Price movement log",
-  latestMove: "Latest move",
-  lowestPrice: "Lowest",
-  highestPrice: "Highest",
-  averagePrice: "Average",
-  noChange: "No change yet",
-  cheaper: "Down",
-  dearer: "Up",
-  date: "Date",
-  price: "Price",
-  alertRules: "Alert rules",
-  notifyText: "Notify when watched products cross your threshold",
-  discountThreshold: "Discount threshold",
-  emailDigest: "Email digest",
-  telegramAlert: "Telegram alert",
-  matchingRows: "matching rows ready for notification",
-  saveSettings: "Save alert settings",
-  sourceNote: "Every record keeps source URL, timestamp, parser name, and extraction status. Run the live collector to refresh real rows.",
-  runRefresh: "Run npm.cmd run refresh to populate live source health.",
+const VIEW_ITEMS = [
+  { id: "deals", icon: Activity },
+  { id: "watchlist", icon: Star },
+  { id: "history", icon: FileClock },
+  { id: "stores", icon: Store },
+  { id: "alerts", icon: Bell },
+  { id: "sources", icon: ShieldCheck },
+];
+
+const DEFAULT_PREFERENCES = {
+  language: "zh",
+  sort: "discount",
+  historyRange: 60,
+  verifiedOnly: true,
+};
+
+const DEFAULT_ALERTS = {
+  email: true,
+  telegram: false,
+  threshold: 18,
 };
 
 function App() {
   const { deals, priceHistory, storeComparisons, sourceHealth, alerts, generatedAt, mode, isLive } = dashboardData;
+  const [preferences, setPreferences] = useStoredState("ksw-preferences", DEFAULT_PREFERENCES);
+  const [alertSettings, setAlertSettings] = useStoredState("ksw-alerts", DEFAULT_ALERTS);
+  const [watchlist, setWatchlist] = useStoredSet("ksw-watchlist", deals.slice(0, 2).map((deal) => deal.canonicalId));
+  const [activeView, setActiveView] = useState("deals");
+  const [query, setQuery] = useState("");
+  const [storeFilter, setStoreFilter] = useState("All stores");
+  const [categoryFilter, setCategoryFilter] = useState("All categories");
+  const [discountOnly, setDiscountOnly] = useState(false);
+  const [selectedId, setSelectedId] = useState(deals[0]?.canonicalId ?? "");
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [savedNotice, setSavedNotice] = useState("");
+  const text = COPY[preferences.language];
+
   const stores = useMemo(() => ["All stores", ...new Set(deals.map((deal) => deal.store))], [deals]);
   const categories = useMemo(() => {
     const available = new Set(deals.map((deal) => deal.category));
-    return ["All categories", ...priorityCategories.filter((item) => available.has(item))];
+    return ["All categories", ...CATEGORY_ORDER.filter((item) => available.has(item))];
   }, [deals]);
-  const [query, setQuery] = useState("");
-  const [store, setStore] = useState(stores[0]);
-  const [category, setCategory] = useState(categories[0]);
-  const [selectedId, setSelectedId] = useState(deals[0]?.canonicalId);
-  const [watchlist, setWatchlist] = useState(new Set(deals.slice(0, 2).map((deal) => deal.canonicalId)));
-  const [emailOn, setEmailOn] = useState(true);
-  const [telegramOn, setTelegramOn] = useState(false);
-  const [threshold, setThreshold] = useState(18);
-  const [language, setLanguage] = useState("en");
-  const text = language === "zh" ? zh : en;
-  const categoryLabel = (value) => language === "zh" ? (zhCategory[value] ?? value) : value;
 
-  const filteredDeals = useMemo(() => {
-    return deals
-      .filter((deal) => store === "All stores" || deal.store === store)
-      .filter((deal) => category === "All categories" || deal.category === category)
+  const decoratedDeals = useMemo(() => {
+    return deals.map((deal) => ({
+      ...deal,
+      movement: getMovement(priceHistory[deal.canonicalId] ?? [], deal.store),
+      comparison: storeComparisons[deal.canonicalId] ?? [],
+    }));
+  }, [deals, priceHistory, storeComparisons]);
+
+  const baseFilteredDeals = useMemo(() => {
+    return decoratedDeals
+      .filter((deal) => storeFilter === "All stores" || deal.store === storeFilter)
+      .filter((deal) => categoryFilter === "All categories" || deal.category === categoryFilter)
+      .filter((deal) => !preferences.verifiedOnly || deal.sourceStatus === "verified")
+      .filter((deal) => !discountOnly || getDiscount(deal) > 0)
       .filter((deal) => {
         const haystack = `${deal.brand} ${deal.productName} ${deal.store} ${deal.category}`.toLowerCase();
         return haystack.includes(query.toLowerCase());
       })
-      .sort((a, b) => getDiscount(b) - getDiscount(a));
-  }, [query, store, category]);
+      .sort((a, b) => sortDeals(a, b, preferences.sort));
+  }, [decoratedDeals, storeFilter, categoryFilter, preferences.verifiedOnly, preferences.sort, discountOnly, query]);
 
-  const selectedComparison = storeComparisons[selectedId] ?? [];
-  const selectedDeal = deals.find((deal) => deal.canonicalId === selectedId) ?? filteredDeals[0] ?? deals[0];
-  const selectedHistory = priceHistory[selectedId] ?? [];
-  const selectedHistoryStats = useMemo(() => getHistoryStats(selectedHistory), [selectedHistory]);
+  const selectedDeal = decoratedDeals.find((deal) => deal.canonicalId === selectedId) ?? baseFilteredDeals[0] ?? decoratedDeals[0];
+  const selectedHistory = useMemo(() => {
+    return filterHistory(priceHistory[selectedDeal?.canonicalId] ?? [], preferences.historyRange);
+  }, [priceHistory, preferences.historyRange, selectedDeal?.canonicalId]);
+  const selectedComparison = storeComparisons[selectedDeal?.canonicalId] ?? [];
+  const selectedStats = getHistoryStats(selectedHistory);
   const best = getBestComparison(selectedComparison);
 
+  useEffect(() => {
+    if (!baseFilteredDeals.length) return;
+    if (!baseFilteredDeals.some((deal) => deal.canonicalId === selectedId)) {
+      setSelectedId(baseFilteredDeals[0].canonicalId);
+    }
+  }, [baseFilteredDeals, selectedId]);
+
   const metrics = {
-    tracked: deals.length,
-    activeDeals: deals.filter((deal) => getDiscount(deal) >= 15).length,
-    priceDrops: deals.filter((deal) => getPriceDrop(deal) > 0).length,
-    alerts: alerts.length || deals.filter((deal) => watchlist.has(deal.canonicalId) && getDiscount(deal) >= threshold).length,
+    products: deals.length,
+    sources: sourceHealth.filter((source) => source.ok).length,
+    alerts: alerts.length || decoratedDeals.filter((deal) => getDiscount(deal) >= alertSettings.threshold).length,
+    watched: watchlist.size,
   };
 
+  const visibleDeals = activeView === "watchlist"
+    ? baseFilteredDeals.filter((deal) => watchlist.has(deal.canonicalId))
+    : baseFilteredDeals;
+
+  const categoryLabel = (value) => {
+    if (value === "All categories") return text.allCategories;
+    return preferences.language === "zh" ? CATEGORY_ZH[value] ?? value : value;
+  };
+
+  const storeLabel = (value) => value === "All stores" ? text.allStores : value;
+
   const toggleWatch = (id) => {
-    const next = new Set(watchlist);
-    if (next.has(id)) next.delete(id);
-    else next.add(id);
-    setWatchlist(next);
+    setWatchlist((current) => {
+      const next = new Set(current);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const updatePreferences = (patch) => {
+    setPreferences((current) => ({ ...current, ...patch }));
+  };
+
+  const saveAlerts = () => {
+    setAlertSettings({ ...alertSettings });
+    showSaved(setSavedNotice, text.saved);
+  };
+
+  const exportCsv = () => {
+    const rows = visibleDeals.map((deal) => ({
+      brand: deal.brand,
+      product: deal.productName,
+      category: deal.category,
+      store: deal.store,
+      currentPrice: deal.currentPrice,
+      previousPrice: deal.previousPrice ?? "",
+      discount: `${getDiscount(deal)}%`,
+      movement: deal.movement.label,
+      sourceUrl: deal.sourceUrl,
+      checkedAt: deal.checkedAt,
+    }));
+    downloadCsv(rows, "kiwi-supplement-watch.csv");
   };
 
   return (
     <div className="app-shell">
-      <aside className="sidebar" aria-label="Primary">
+      <aside className="sidebar" aria-label="Primary navigation">
         <div className="brand">
-          <div className="brand-mark">K</div>
+          <div className="brand-mark"><HeartPulse size={20} /></div>
           <div>
-            <strong>Kiwi Supplement Watch</strong>
-            <span>NZ deal monitor</span>
+            <strong>{text.appName}</strong>
+            <span>{text.strapline}</span>
           </div>
         </div>
+
         <nav className="nav-list">
-          <button className="nav-item active"><Activity size={18} /> {text.navDeals}</button>
-          <button className="nav-item"><LineChart size={18} /> {text.navHistory}</button>
-          <button className="nav-item"><Store size={18} /> {text.navStores}</button>
-          <button className="nav-item"><Bell size={18} /> {text.navAlerts}</button>
-          <button className="nav-item"><ShieldCheck size={18} /> {text.navSources}</button>
+          {VIEW_ITEMS.map((item) => {
+            const Icon = item.icon;
+            return (
+              <button
+                className={activeView === item.id ? "nav-item active" : "nav-item"}
+                onClick={() => setActiveView(item.id)}
+                key={item.id}
+              >
+                <Icon size={17} />
+                <span>{text[item.id]}</span>
+              </button>
+            );
+          })}
         </nav>
-        <div className="source-note">
-          <ShieldCheck size={17} />
-          <p>{text.sourceNote}</p>
+
+        <div className="sidebar-status">
+          <div>
+            <span>{isLive ? text.liveData : text.demoData}</span>
+            <strong>{sourceHealth.filter((source) => source.ok).length}/{Math.max(sourceHealth.length, 1)} {text.sources}</strong>
+          </div>
+          <div>
+            <span>{text.lastChecked}</span>
+            <strong>{generatedAt ? formatDateTime(generatedAt, preferences.language) : "--"}</strong>
+          </div>
         </div>
       </aside>
 
       <main className="workspace">
         <header className="topbar">
-          <div>
-            <h1>{text.title}</h1>
-            <p>{text.subtitle}</p>
+          <div className="search">
+            <Search size={17} />
+            <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={text.search} />
           </div>
           <div className="top-actions">
-            <div className="search">
-              <Search size={18} />
-              <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={text.search} />
-            </div>
-            <button className="secondary-button" onClick={() => setLanguage(language === "zh" ? "en" : "zh")}>
-              {language === "zh" ? "EN" : "中文"}
+            <StatusPill tone={isLive ? "ok" : "muted"} label={isLive ? text.liveData : text.demoData} />
+            <button className="text-button" onClick={() => updatePreferences({ language: preferences.language === "zh" ? "en" : "zh" })}>
+              <Globe2 size={16} />
+              {preferences.language === "zh" ? "EN" : "中文"}
             </button>
-            <button className="icon-button" aria-label="Filter"><SlidersHorizontal size={18} /></button>
+            <button className="icon-button" onClick={() => setSettingsOpen(true)} aria-label={text.settings}>
+              <Settings size={18} />
+            </button>
           </div>
         </header>
 
-        <section className="status-strip" aria-label="Data status">
-          <div>
-            <span>{text.lastDataset}</span>
-            <strong>{generatedAt ? formatDateTime(generatedAt) : text.notFetched}</strong>
-          </div>
-          <div>
-            <span>{text.sourceMode}</span>
-            <strong>{isLive ? text.liveFetch : text.seededMode}</strong>
-          </div>
-          <div>
-            <span>{text.refreshCommand}</span>
-            <strong>npm.cmd run refresh</strong>
-          </div>
-        </section>
-
-        <section className="metric-grid">
-          <Metric icon={<Store size={20} />} label={text.trackedProducts} value={metrics.tracked} />
-          <Metric icon={<TrendingDown size={20} />} label={text.activeDeals} value={metrics.activeDeals} tone="green" />
-          <Metric icon={<AlarmClock size={20} />} label={text.priceDrops} value={metrics.priceDrops} tone="amber" />
-          <Metric icon={<Bell size={20} />} label={text.alertsReady} value={metrics.alerts} tone="blue" />
-        </section>
-
-        <section className="control-row">
-          <Select label={text.store} value={store} options={stores} onChange={setStore} getLabel={(value) => value === "All stores" && language === "zh" ? "全部商店" : value} />
-          <Select label={text.category} value={category} options={categories} onChange={setCategory} getLabel={categoryLabel} />
-          <button className="secondary-button"><Filter size={16} /> {text.verifiedOnly}</button>
+        <section className="metric-strip" aria-label="Dashboard summary">
+          <Metric label={text.products} value={metrics.products} />
+          <Metric label={text.healthySources} value={`${metrics.sources}/${sourceHealth.length || 4}`} tone="ok" />
+          <Metric label={text.activeAlerts} value={metrics.alerts} tone="warn" />
+          <Metric label={text.tracked} value={metrics.watched} tone="accent" />
         </section>
 
         <div className="content-grid">
-          <section className="panel deal-table-panel">
-            <div className="panel-header">
-              <div>
-                <h2>{text.discountRadar}</h2>
-                <p>{filteredDeals.length} {text.rowsFrom}</p>
-              </div>
-              <button className="secondary-button">{text.exportCsv}</button>
-            </div>
-            <div className="table-wrap">
-              <table>
-                <thead>
-                  <tr>
-                    <th>{text.product}</th>
-                    <th>{text.store}</th>
-                    <th>{text.now}</th>
-                    <th>{text.was}</th>
-                    <th>{text.drop}</th>
-                    <th>{text.priority}</th>
-                    <th>{text.unit}</th>
-                    <th>{text.source}</th>
-                    <th></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredDeals.map((deal) => (
-                    <tr key={deal.id} className={selectedId === deal.canonicalId ? "selected-row" : ""} onClick={() => setSelectedId(deal.canonicalId)}>
-                      <td>
-                        <div className="product-cell">
-                          <button
-                            className={watchlist.has(deal.canonicalId) ? "watch active" : "watch"}
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              toggleWatch(deal.canonicalId);
-                            }}
-                            aria-label="Toggle watch"
-                          >
-                            <Star size={15} />
-                          </button>
-                          <div>
-                            <strong>{deal.brand}</strong>
-                            <span>{deal.productName}</span>
-                          </div>
-                        </div>
-                      </td>
-                      <td>{deal.store}</td>
-                      <td className="price">{formatCurrency(deal.currentPrice)}</td>
-                      <td className="muted">{formatCurrency(deal.previousPrice)}</td>
-                      <td><span className="deal-pill">{getDiscount(deal)}%</span></td>
-                      <td><span className={deal.priority >= 90 ? "priority-pill high" : "priority-pill"}>{deal.priority ?? 20}</span></td>
-                      <td>{getUnitPrice(deal)}</td>
-                      <td>
-                        <a href={deal.sourceUrl} target="_blank" rel="noreferrer" className="source-link">
-                          {freshnessLabel(deal)} <ExternalLink size={13} />
-                        </a>
-                      </td>
-                      <td><ChevronDown size={16} /></td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+          <section className="main-surface">
+            {activeView !== "sources" && (
+              <FilterBar
+                text={text}
+                stores={stores}
+                categories={categories}
+                storeFilter={storeFilter}
+                categoryFilter={categoryFilter}
+                sort={preferences.sort}
+                verifiedOnly={preferences.verifiedOnly}
+                discountOnly={discountOnly}
+                storeLabel={storeLabel}
+                categoryLabel={categoryLabel}
+                onStore={setStoreFilter}
+                onCategory={setCategoryFilter}
+                onSort={(sort) => updatePreferences({ sort })}
+                onVerified={(verifiedOnly) => updatePreferences({ verifiedOnly })}
+                onDiscountOnly={setDiscountOnly}
+                onExport={exportCsv}
+              />
+            )}
+
+            {activeView === "deals" && (
+              <DealsTable
+                rows={visibleDeals}
+                text={text}
+                selectedId={selectedDeal?.canonicalId}
+                watchlist={watchlist}
+                onSelect={setSelectedId}
+                onWatch={toggleWatch}
+                emptyText={text.noRows}
+              />
+            )}
+
+            {activeView === "watchlist" && (
+              <DealsTable
+                rows={visibleDeals}
+                text={text}
+                selectedId={selectedDeal?.canonicalId}
+                watchlist={watchlist}
+                onSelect={setSelectedId}
+                onWatch={toggleWatch}
+                emptyText={text.noWatchlist}
+              />
+            )}
+
+            {activeView === "history" && (
+              <HistoryView
+                text={text}
+                deals={decoratedDeals}
+                priceHistory={priceHistory}
+                historyRange={preferences.historyRange}
+                onSelect={setSelectedId}
+              />
+            )}
+
+            {activeView === "stores" && (
+              <StoresView text={text} deals={decoratedDeals} sourceHealth={sourceHealth} />
+            )}
+
+            {activeView === "alerts" && (
+              <AlertsView
+                text={text}
+                alertSettings={alertSettings}
+                setAlertSettings={setAlertSettings}
+                deals={decoratedDeals}
+                watchlist={watchlist}
+                selectedId={selectedDeal?.canonicalId}
+                onSelect={setSelectedId}
+                onWatch={toggleWatch}
+                savedNotice={savedNotice}
+                onSave={saveAlerts}
+              />
+            )}
+
+            {activeView === "sources" && (
+              <SourcesView text={text} sourceHealth={sourceHealth} mode={mode} generatedAt={generatedAt} language={preferences.language} />
+            )}
           </section>
 
-          <aside className="right-rail">
-            <section className="panel health-panel">
-              <div className="panel-header tight">
-                <div>
-                  <h2>Source health</h2>
-                  <p>{mode} · {text.parserStatus}</p>
-                </div>
-              </div>
-              <div className="health-list">
-                {sourceHealth.length ? sourceHealth.map((source) => (
-                  <a className="health-row" href={source.sourceUrl} target="_blank" rel="noreferrer" key={source.id}>
-                    <span className={source.ok ? "health-icon ok" : "health-icon fail"}>
-                      {source.ok ? <Wifi size={15} /> : <WifiOff size={15} />}
-                    </span>
-                    <div>
-                      <strong>{source.store}</strong>
-                      <span>{source.extracted} rows · {source.durationMs} ms</span>
-                    </div>
-                  </a>
-                )) : (
-                  <div className="empty-state">
-                    <Terminal size={18} />
-                    <span>{text.runRefresh}</span>
-                  </div>
-                )}
-              </div>
-            </section>
-
-            <section className="panel compare-panel">
-              <div className="panel-header tight">
-                <div>
-                  <h2>{text.storeComparison}</h2>
-                  <p>{selectedDeal.brand} · {selectedDeal.size}</p>
-                </div>
-              </div>
-              <div className="best-box">
-                <span>{text.bestPrice}</span>
-                <strong>{best ? formatCurrency(best.currentPrice) : "N/A"}</strong>
-                <p>{best ? best.store : "No comparison rows"}</p>
-              </div>
-              <div className="comparison-list">
-                {selectedComparison.map((item) => (
-                  <a className="comparison-row" href={item.sourceUrl} target="_blank" rel="noreferrer" key={item.store}>
-                    <div>
-                      <strong>{item.store}</strong>
-                      <span>{item.status}</span>
-                    </div>
-                    <div>
-                      <strong>{formatCurrency(item.currentPrice)}</strong>
-                      <span>{item.discount}% off</span>
-                    </div>
-                  </a>
-                ))}
-              </div>
-            </section>
-
-            <section className="panel chart-panel">
-              <div className="panel-header tight">
-                <div>
-                  <h2>{text.priceHistory}</h2>
-                  <p>{text.trend}</p>
-                </div>
-              </div>
-              <Sparkline points={selectedHistory} />
-              <div className="chart-legend">
-                <span><i className="dot green"></i> {text.currentPrice}</span>
-                <span><i className="dot amber"></i> {text.alertThreshold}</span>
-              </div>
-              <PriceMovementLog history={selectedHistory} stats={selectedHistoryStats} text={text} />
-            </section>
-
-            <section className="panel alerts-panel">
-              <div className="panel-header tight">
-                <div>
-                  <h2>{text.alertRules}</h2>
-                  <p>{text.notifyText}</p>
-                </div>
-              </div>
-              <label className="range-label">
-                {text.discountThreshold} <strong>{threshold}%</strong>
-                <input type="range" min="5" max="45" value={threshold} onChange={(event) => setThreshold(Number(event.target.value))} />
-              </label>
-              <Toggle icon={<Mail size={17} />} label={text.emailDigest} checked={emailOn} onChange={setEmailOn} />
-              <Toggle icon={<Send size={17} />} label={text.telegramAlert} checked={telegramOn} onChange={setTelegramOn} />
-              <div className="alert-preview">
-                <strong>{metrics.alerts}</strong>
-                <span>{text.matchingRows}</span>
-              </div>
-              <button className="primary-button"><CheckCircle2 size={17} /> {text.saveSettings}</button>
-            </section>
-          </aside>
+          <DetailPanel
+            text={text}
+            deal={selectedDeal}
+            comparison={selectedComparison}
+            history={selectedHistory}
+            stats={selectedStats}
+            best={best}
+            watchlist={watchlist}
+            alertSettings={alertSettings}
+            setAlertSettings={setAlertSettings}
+            onWatch={toggleWatch}
+            onSaveAlerts={saveAlerts}
+            savedNotice={savedNotice}
+          />
         </div>
       </main>
+
+      {settingsOpen && (
+        <SettingsPanel
+          text={text}
+          preferences={preferences}
+          updatePreferences={updatePreferences}
+          onClose={() => setSettingsOpen(false)}
+        />
+      )}
     </div>
   );
 }
 
-function formatDateTime(value) {
-  return new Intl.DateTimeFormat("en-NZ", {
-    dateStyle: "medium",
-    timeStyle: "short",
-    timeZone: "Pacific/Auckland",
-  }).format(new Date(value));
-}
-
-function Metric({ icon, label, value, tone = "neutral" }) {
+function FilterBar({
+  text,
+  stores,
+  categories,
+  storeFilter,
+  categoryFilter,
+  sort,
+  verifiedOnly,
+  discountOnly,
+  storeLabel,
+  categoryLabel,
+  onStore,
+  onCategory,
+  onSort,
+  onVerified,
+  onDiscountOnly,
+  onExport,
+}) {
   return (
-    <article className={`metric-card ${tone}`}>
-      <div>{icon}</div>
-      <span>{label}</span>
-      <strong>{value}</strong>
-    </article>
-  );
-}
-
-function Select({ label, value, options, onChange, getLabel = (item) => item }) {
-  return (
-    <label className="select-control">
-      <span>{label}</span>
-      <select value={value} onChange={(event) => onChange(event.target.value)}>
-        {options.map((option) => <option key={option} value={option}>{getLabel(option)}</option>)}
-      </select>
-    </label>
-  );
-}
-
-function Toggle({ icon, label, checked, onChange }) {
-  return (
-    <label className="toggle-row">
-      <span>{icon}{label}</span>
-      <input type="checkbox" checked={checked} onChange={(event) => onChange(event.target.checked)} />
-    </label>
-  );
-}
-
-function PriceMovementLog({ history, stats, text }) {
-  if (!history.length) return null;
-  const recent = sortHistory(history).slice(-6).reverse();
-  const moveClass = stats.move < 0 ? "down" : stats.move > 0 ? "up" : "";
-  const moveLabel = stats.move < 0 ? text.cheaper : stats.move > 0 ? text.dearer : text.noChange;
-  const moveText = stats.hasMove ? `${moveLabel} ${formatCurrency(Math.abs(stats.move))}` : text.noChange;
-
-  return (
-    <div className="movement-log">
-      <div className="movement-stats" aria-label={text.priceMovement}>
-        <Stat label={text.latestMove} value={moveText} tone={moveClass} />
-        <Stat label={text.lowestPrice} value={formatCurrency(stats.min)} />
-        <Stat label={text.highestPrice} value={formatCurrency(stats.max)} />
-        <Stat label={text.averagePrice} value={formatCurrency(stats.average)} />
+    <div className="filter-bar">
+      <div className="filter-title">
+        <SlidersHorizontal size={17} />
+        <span>{text.filters}</span>
       </div>
-      <div className="movement-table" role="table" aria-label={text.priceMovement}>
-        <div className="movement-row head" role="row">
-          <span role="columnheader">{text.date}</span>
-          <span role="columnheader">{text.store}</span>
-          <span role="columnheader">{text.price}</span>
+      <Select value={storeFilter} options={stores} onChange={onStore} labeler={storeLabel} />
+      <Select value={categoryFilter} options={categories} onChange={onCategory} labeler={categoryLabel} />
+      <Select
+        value={sort}
+        options={["discount", "price", "priority", "movement"]}
+        onChange={onSort}
+        labeler={(value) => ({
+          discount: text.highestDiscount,
+          price: text.lowestPrice,
+          priority: text.priority,
+          movement: text.latestMove,
+        })[value]}
+      />
+      <TogglePill checked={verifiedOnly} onChange={onVerified} label={text.verifiedOnly} />
+      <TogglePill checked={discountOnly} onChange={onDiscountOnly} label={text.discountOnly} />
+      <button className="text-button export-button" onClick={onExport}>
+        <Download size={16} />
+        {text.exportCsv}
+      </button>
+    </div>
+  );
+}
+
+function DealsTable({ rows, text, selectedId, watchlist, onSelect, onWatch, emptyText }) {
+  if (!rows.length) {
+    return <EmptyState icon={<Search size={20} />} text={emptyText} />;
+  }
+
+  return (
+    <div className="table-wrap">
+      <table className="deals-table">
+        <thead>
+          <tr>
+            <th>{text.product}</th>
+            <th>{text.store}</th>
+            <th>{text.now}</th>
+            <th>{text.was}</th>
+            <th>{text.discount}</th>
+            <th>{text.movement}</th>
+            <th>{text.source}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((deal) => (
+            <tr
+              key={deal.id}
+              className={selectedId === deal.canonicalId ? "selected-row" : ""}
+              onClick={() => onSelect(deal.canonicalId)}
+            >
+              <td>
+                <div className="product-cell">
+                  <button
+                    className={watchlist.has(deal.canonicalId) ? "watch-button active" : "watch-button"}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      onWatch(deal.canonicalId);
+                    }}
+                    aria-label={text.watch}
+                  >
+                    <Star size={15} />
+                  </button>
+                  {deal.imageUrl ? <img src={deal.imageUrl} alt="" loading="lazy" /> : <div className="product-fallback">{deal.brand.slice(0, 1)}</div>}
+                  <div>
+                    <strong>{deal.brand}</strong>
+                    <span>{deal.productName}</span>
+                    <small>{deal.category} · {deal.size}</small>
+                  </div>
+                </div>
+              </td>
+              <td>{deal.store}</td>
+              <td className="price">{formatCurrency(deal.currentPrice)}</td>
+              <td className="muted">{deal.previousPrice ? formatCurrency(deal.previousPrice) : "--"}</td>
+              <td><Discount value={getDiscount(deal)} /></td>
+              <td><Movement movement={deal.movement} text={text} /></td>
+              <td>
+                <a className="source-link" href={deal.sourceUrl} target="_blank" rel="noreferrer" onClick={(event) => event.stopPropagation()}>
+                  {freshnessLabel(deal)}
+                  <ExternalLink size={13} />
+                </a>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function DetailPanel({ text, deal, comparison, history, stats, best, watchlist, alertSettings, setAlertSettings, onWatch, onSaveAlerts, savedNotice }) {
+  if (!deal) return null;
+  const watched = watchlist.has(deal.canonicalId);
+
+  return (
+    <aside className="detail-panel">
+      <div className="detail-heading">
+        <span>{text.selectedProduct}</span>
+        <button className={watched ? "watch-button active" : "watch-button"} onClick={() => onWatch(deal.canonicalId)}>
+          <Star size={15} />
+        </button>
+      </div>
+      <div className="detail-product">
+        <strong>{deal.brand}</strong>
+        <h2>{deal.productName}</h2>
+        <p>{deal.category} · {deal.size} · {getUnitPrice(deal)}</p>
+      </div>
+
+      <div className="best-price">
+        <span>{text.bestPrice}</span>
+        <strong>{best ? formatCurrency(best.currentPrice) : formatCurrency(deal.currentPrice)}</strong>
+        <p>{best?.store ?? deal.store}</p>
+      </div>
+
+      <section className="detail-section">
+        <h3>{text.storeComparison}</h3>
+        <div className="comparison-list">
+          {(comparison.length ? comparison : [{ ...deal, status: deal.sourceStatus }]).map((item) => (
+            <a href={item.sourceUrl} target="_blank" rel="noreferrer" className="comparison-row" key={`${item.store}-${item.currentPrice}`}>
+              <span>{item.store}</span>
+              <strong>{formatCurrency(item.currentPrice)}</strong>
+              <small>{item.discount ?? getDiscount(deal)}%</small>
+            </a>
+          ))}
         </div>
-        {recent.map((point) => (
-          <a
-            className="movement-row"
-            href={point.sourceUrl}
-            target="_blank"
-            rel="noreferrer"
-            key={`${point.date}-${point.store}-${point.price}`}
-            role="row"
-          >
-            <span role="cell">{formatShortDate(point.date)}</span>
-            <span role="cell">{point.store}</span>
-            <strong role="cell">{formatCurrency(point.price)}</strong>
-          </a>
+      </section>
+
+      <section className="detail-section">
+        <h3>{text.priceMovement}</h3>
+        <Sparkline points={history} />
+        <div className="history-stats">
+          <Stat label={text.lowestPrice} value={formatCurrency(stats.min)} />
+          <Stat label={text.averagePrice} value={formatCurrency(stats.average)} />
+          <Stat label={text.highestPrice} value={formatCurrency(stats.max)} />
+        </div>
+        <RecentHistory text={text} history={history} />
+      </section>
+
+      <section className="detail-section">
+        <h3>{text.alertRule}</h3>
+        <label className="range-label">
+          <span>{text.threshold}</span>
+          <strong>{alertSettings.threshold}%</strong>
+          <input
+            type="range"
+            min="5"
+            max="50"
+            value={alertSettings.threshold}
+            onChange={(event) => setAlertSettings((current) => ({ ...current, threshold: Number(event.target.value) }))}
+          />
+        </label>
+        <SwitchRow label={text.email} checked={alertSettings.email} onChange={(email) => setAlertSettings((current) => ({ ...current, email }))} icon={<Mail size={16} />} />
+        <SwitchRow label={text.telegram} checked={alertSettings.telegram} onChange={(telegram) => setAlertSettings((current) => ({ ...current, telegram }))} icon={<Send size={16} />} />
+        <button className="primary-button" onClick={onSaveAlerts}>
+          <CheckCircle2 size={16} />
+          {savedNotice || text.saveSettings}
+        </button>
+      </section>
+    </aside>
+  );
+}
+
+function HistoryView({ text, deals, priceHistory, historyRange, onSelect }) {
+  const rows = deals.flatMap((deal) =>
+    filterHistory(priceHistory[deal.canonicalId] ?? [], historyRange).map((point) => ({
+      ...point,
+      canonicalId: deal.canonicalId,
+      brand: deal.brand,
+      productName: deal.productName,
+      category: deal.category,
+    }))
+  ).sort((a, b) => `${b.checkedAt ?? b.date}`.localeCompare(`${a.checkedAt ?? a.date}`));
+
+  if (!rows.length) return <EmptyState icon={<FileClock size={20} />} text={text.noHistory} />;
+
+  return (
+    <div className="list-view">
+      <div className="view-header">
+        <div>
+          <h1>{text.history}</h1>
+          <p>{rows.length} {text.records}</p>
+        </div>
+      </div>
+      <div className="history-list">
+        {rows.slice(0, 120).map((row) => (
+          <button className="history-row" onClick={() => onSelect(row.canonicalId)} key={`${row.canonicalId}-${row.store}-${row.date}-${row.price}`}>
+            <div>
+              <strong>{row.brand}</strong>
+              <span>{row.productName}</span>
+            </div>
+            <span>{row.store}</span>
+            <span>{formatShortDate(row.date)}</span>
+            <strong>{formatCurrency(row.price)}</strong>
+          </button>
         ))}
       </div>
     </div>
   );
 }
 
-function Stat({ label, value, tone = "" }) {
+function StoresView({ text, deals, sourceHealth }) {
+  const stores = Object.values(deals.reduce((acc, deal) => {
+    acc[deal.store] ??= { store: deal.store, count: 0, total: 0, discounts: 0, best: Infinity };
+    acc[deal.store].count += 1;
+    acc[deal.store].total += deal.currentPrice;
+    acc[deal.store].discounts += getDiscount(deal);
+    acc[deal.store].best = Math.min(acc[deal.store].best, deal.currentPrice);
+    return acc;
+  }, {})).sort((a, b) => b.count - a.count);
+
   return (
-    <div className={`movement-stat ${tone}`}>
-      <span>{label}</span>
-      <strong>{value}</strong>
+    <div className="list-view">
+      <div className="view-header">
+        <div>
+          <h1>{text.stores}</h1>
+          <p>{stores.length} {text.stores}</p>
+        </div>
+      </div>
+      <div className="store-grid">
+        {stores.map((store) => {
+          const health = sourceHealth.find((source) => source.store === store.store);
+          return (
+            <article className="store-card" key={store.store}>
+              <div className="store-card-head">
+                <strong>{store.store}</strong>
+                <span className={health?.ok ? "status ok" : "status fail"}>{health?.ok ? text.ok : text.failed}</span>
+              </div>
+              <div className="store-card-stats">
+                <Stat label={text.products} value={store.count} />
+                <Stat label={text.averagePrice} value={formatCurrency(store.total / store.count)} />
+                <Stat label={text.lowestPrice} value={formatCurrency(store.best)} />
+                <Stat label={text.discount} value={`${Math.round(store.discounts / store.count)}%`} />
+              </div>
+            </article>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function AlertsView({ text, alertSettings, setAlertSettings, deals, watchlist, selectedId, onSelect, onWatch, savedNotice, onSave }) {
+  const matches = deals
+    .filter((deal) => getDiscount(deal) >= alertSettings.threshold)
+    .filter((deal) => !watchlist.size || watchlist.has(deal.canonicalId))
+    .slice(0, 20);
+
+  return (
+    <div className="list-view">
+      <div className="view-header">
+        <div>
+          <h1>{text.alerts}</h1>
+          <p>{matches.length} {text.activeAlerts}</p>
+        </div>
+      </div>
+      <div className="settings-card">
+        <label className="range-label wide">
+          <span>{text.threshold}</span>
+          <strong>{alertSettings.threshold}%</strong>
+          <input
+            type="range"
+            min="5"
+            max="50"
+            value={alertSettings.threshold}
+            onChange={(event) => setAlertSettings((current) => ({ ...current, threshold: Number(event.target.value) }))}
+          />
+        </label>
+        <SwitchRow label={text.email} checked={alertSettings.email} onChange={(email) => setAlertSettings((current) => ({ ...current, email }))} icon={<Mail size={16} />} />
+        <SwitchRow label={text.telegram} checked={alertSettings.telegram} onChange={(telegram) => setAlertSettings((current) => ({ ...current, telegram }))} icon={<Send size={16} />} />
+        <button className="primary-button compact" onClick={onSave}>
+          <CheckCircle2 size={16} />
+          {savedNotice || text.saveSettings}
+        </button>
+        <small>{text.localOnly}</small>
+      </div>
+      <DealsTable rows={matches} text={text} selectedId={selectedId} watchlist={watchlist} onSelect={onSelect} onWatch={onWatch} emptyText={text.noRows} />
+    </div>
+  );
+}
+
+function SourcesView({ text, sourceHealth, mode, generatedAt, language }) {
+  return (
+    <div className="list-view">
+      <div className="view-header">
+        <div>
+          <h1>{text.sources}</h1>
+          <p>{text.sourcesIntro}</p>
+        </div>
+        <StatusPill tone="muted" label={mode} />
+      </div>
+      <div className="sources-table">
+        <div className="source-head">
+          <span>{text.store}</span>
+          <span>{text.status}</span>
+          <span>{text.records}</span>
+          <span>{text.checkedAt}</span>
+          <span>{text.parser}</span>
+        </div>
+        {sourceHealth.map((source) => (
+          <a className="source-row" href={source.sourceUrl} target="_blank" rel="noreferrer" key={source.id}>
+            <strong>{source.store}</strong>
+            <span className={source.ok ? "status ok" : "status fail"}>
+              {source.ok ? <Wifi size={14} /> : <WifiOff size={14} />}
+              {source.ok ? text.ok : text.failed}
+            </span>
+            <span>{source.extracted}</span>
+            <span>{source.checkedAt ? formatDateTime(source.checkedAt, language) : "--"}</span>
+            <small>{source.note}</small>
+          </a>
+        ))}
+      </div>
+      <p className="source-footnote">{text.lastChecked}: {generatedAt ? formatDateTime(generatedAt, language) : "--"}</p>
+    </div>
+  );
+}
+
+function SettingsPanel({ text, preferences, updatePreferences, onClose }) {
+  return (
+    <div className="modal-backdrop" role="presentation">
+      <section className="settings-panel" role="dialog" aria-modal="true" aria-label={text.settings}>
+        <div className="settings-head">
+          <div>
+            <span>{text.settings}</span>
+            <h2>{text.preferences}</h2>
+          </div>
+          <button className="icon-button" onClick={onClose} aria-label={text.close}>
+            <X size={18} />
+          </button>
+        </div>
+        <label className="field">
+          <span>{text.language}</span>
+          <select value={preferences.language} onChange={(event) => updatePreferences({ language: event.target.value })}>
+            <option value="zh">中文</option>
+            <option value="en">English</option>
+          </select>
+        </label>
+        <label className="field">
+          <span>{text.defaultSort}</span>
+          <select value={preferences.sort} onChange={(event) => updatePreferences({ sort: event.target.value })}>
+            <option value="discount">{text.highestDiscount}</option>
+            <option value="price">{text.lowestPrice}</option>
+            <option value="priority">{text.priority}</option>
+            <option value="movement">{text.latestMove}</option>
+          </select>
+        </label>
+        <label className="field">
+          <span>{text.historyRange}</span>
+          <select value={preferences.historyRange} onChange={(event) => updatePreferences({ historyRange: Number(event.target.value) })}>
+            <option value={7}>{text.days7}</option>
+            <option value={30}>{text.days30}</option>
+            <option value={60}>{text.days60}</option>
+          </select>
+        </label>
+        <SwitchRow label={text.verifiedOnly} checked={preferences.verifiedOnly} onChange={(verifiedOnly) => updatePreferences({ verifiedOnly })} icon={<ShieldCheck size={16} />} />
+        <button className="primary-button" onClick={onClose}>
+          <Check size={16} />
+          {text.savePreferences}
+        </button>
+      </section>
     </div>
   );
 }
 
 function Sparkline({ points }) {
-  const width = 460;
-  const height = 164;
   const chartPoints = getDailyLowestPoints(points);
-  if (!chartPoints.length) return <div className="empty-chart">No history yet</div>;
+  if (!chartPoints.length) return <div className="empty-chart">--</div>;
+  const width = 360;
+  const height = 126;
   const prices = chartPoints.map((point) => point.price);
   const minPrice = Math.min(...prices);
   const maxPrice = Math.max(...prices);
@@ -572,39 +932,176 @@ function Sparkline({ points }) {
   }).join(" ");
 
   return (
-    <svg className="sparkline" viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Price history chart">
-      <defs>
-        <linearGradient id="lineFill" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#2e7d63" stopOpacity="0.22" />
-          <stop offset="100%" stopColor="#2e7d63" stopOpacity="0" />
-        </linearGradient>
-      </defs>
-      <polyline points={`0,${height} ${coords} ${width},${height}`} fill="url(#lineFill)" stroke="none" />
-      <polyline points={coords} fill="none" stroke="#2e7d63" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
+    <svg className="sparkline" viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Price movement">
+      <polyline points={`0,${height} ${coords} ${width},${height}`} fill="rgba(46, 125, 99, 0.08)" stroke="none" />
+      <polyline points={coords} fill="none" stroke="#23745b" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
       {chartPoints.map((point, index) => {
         const [x, y] = coords.split(" ")[index].split(",").map(Number);
-        return <circle key={point.date} cx={x} cy={y} r="4.5" fill="#ffffff" stroke="#2e7d63" strokeWidth="3" />;
+        return <circle key={`${point.date}-${point.store ?? index}`} cx={x} cy={y} r="3.5" fill="#ffffff" stroke="#23745b" strokeWidth="2" />;
       })}
     </svg>
   );
 }
 
+function RecentHistory({ text, history }) {
+  const recent = sortHistory(history).slice(-5).reverse();
+  if (!recent.length) return <div className="empty-chart">{text.noHistory}</div>;
+  return (
+    <div className="recent-history">
+      <div className="mini-head">
+        <span>{text.recentRecords}</span>
+      </div>
+      {recent.map((point) => (
+        <a className="mini-row" href={point.sourceUrl} target="_blank" rel="noreferrer" key={`${point.date}-${point.store}-${point.price}`}>
+          <span>{formatShortDate(point.date)}</span>
+          <span>{point.store}</span>
+          <strong>{formatCurrency(point.price)}</strong>
+        </a>
+      ))}
+    </div>
+  );
+}
+
+function Movement({ movement, text }) {
+  const Icon = movement.value < 0 ? TrendingDown : movement.value > 0 ? TrendingUp : ChevronDown;
+  const label = movement.value < 0 ? text.lower : movement.value > 0 ? text.higher : text.unchanged;
+  return (
+    <span className={`movement ${movement.value < 0 ? "down" : movement.value > 0 ? "up" : "flat"}`}>
+      <Icon size={14} />
+      {movement.hasPrevious ? `${label} ${formatCurrency(Math.abs(movement.value))}` : "--"}
+    </span>
+  );
+}
+
+function Discount({ value }) {
+  return <span className={value >= 30 ? "discount hot" : "discount"}>{value}%</span>;
+}
+
+function Metric({ label, value, tone = "" }) {
+  return (
+    <article className={`metric ${tone}`}>
+      <span>{label}</span>
+      <strong>{value}</strong>
+    </article>
+  );
+}
+
+function Stat({ label, value }) {
+  return (
+    <div className="stat">
+      <span>{label}</span>
+      <strong>{value}</strong>
+    </div>
+  );
+}
+
+function Select({ value, options, onChange, labeler = (item) => item }) {
+  return (
+    <label className="select-control">
+      <select value={value} onChange={(event) => onChange(event.target.value)}>
+        {options.map((option) => <option key={option} value={option}>{labeler(option)}</option>)}
+      </select>
+    </label>
+  );
+}
+
+function TogglePill({ checked, onChange, label }) {
+  return (
+    <button className={checked ? "toggle-pill active" : "toggle-pill"} onClick={() => onChange(!checked)}>
+      <span>{checked ? <Check size={13} /> : null}</span>
+      {label}
+    </button>
+  );
+}
+
+function SwitchRow({ label, checked, onChange, icon }) {
+  return (
+    <label className="switch-row">
+      <span>{icon}{label}</span>
+      <input type="checkbox" checked={checked} onChange={(event) => onChange(event.target.checked)} />
+    </label>
+  );
+}
+
+function StatusPill({ label, tone }) {
+  return <span className={`status-pill ${tone}`}>{label}</span>;
+}
+
+function EmptyState({ icon, text }) {
+  return (
+    <div className="empty-state">
+      {icon}
+      <span>{text}</span>
+    </div>
+  );
+}
+
+function useStoredState(key, initialValue) {
+  const [value, setValue] = useState(() => {
+    try {
+      const saved = localStorage.getItem(key);
+      return saved ? { ...initialValue, ...JSON.parse(saved) } : initialValue;
+    } catch {
+      return initialValue;
+    }
+  });
+
+  useEffect(() => {
+    localStorage.setItem(key, JSON.stringify(value));
+  }, [key, value]);
+
+  return [value, setValue];
+}
+
+function useStoredSet(key, initialItems) {
+  const [value, setValue] = useState(() => {
+    try {
+      const saved = localStorage.getItem(key);
+      return new Set(saved ? JSON.parse(saved) : initialItems);
+    } catch {
+      return new Set(initialItems);
+    }
+  });
+
+  useEffect(() => {
+    localStorage.setItem(key, JSON.stringify([...value]));
+  }, [key, value]);
+
+  return [value, setValue];
+}
+
+function sortDeals(a, b, sort) {
+  if (sort === "price") return a.currentPrice - b.currentPrice;
+  if (sort === "priority") return (b.priority ?? 0) - (a.priority ?? 0) || getDiscount(b) - getDiscount(a);
+  if (sort === "movement") return Math.abs(b.movement.value) - Math.abs(a.movement.value);
+  return getDiscount(b) - getDiscount(a) || a.currentPrice - b.currentPrice;
+}
+
+function getMovement(history, store) {
+  const rows = sortHistory(history).filter((point) => !store || point.store === store);
+  const latest = rows[rows.length - 1];
+  const previous = rows[rows.length - 2];
+  if (!latest || !previous) return { value: 0, hasPrevious: false, label: "flat" };
+  const value = roundMoney(latest.price - previous.price);
+  return { value, hasPrevious: true, label: value < 0 ? "down" : value > 0 ? "up" : "flat" };
+}
+
 function getHistoryStats(history) {
-  const sorted = sortHistory(history);
-  if (!sorted.length) {
-    return { min: 0, max: 0, average: 0, move: 0, hasMove: false };
-  }
-  const prices = sorted.map((point) => point.price);
-  const latest = sorted[sorted.length - 1];
-  const previous = [...sorted].slice(0, -1).reverse().find((point) => point.store === latest.store) ?? sorted[sorted.length - 2];
-  const move = previous ? roundMoney(latest.price - previous.price) : 0;
+  const rows = sortHistory(history);
+  if (!rows.length) return { min: 0, max: 0, average: 0 };
+  const prices = rows.map((row) => row.price);
   return {
     min: Math.min(...prices),
     max: Math.max(...prices),
     average: roundMoney(prices.reduce((sum, price) => sum + price, 0) / prices.length),
-    move,
-    hasMove: Boolean(previous),
   };
+}
+
+function filterHistory(history, range) {
+  if (!history.length) return [];
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - Number(range));
+  return history.filter((point) => new Date(`${point.date}T23:59:59+12:00`) >= cutoff);
 }
 
 function getDailyLowestPoints(points) {
@@ -624,6 +1121,31 @@ function sortHistory(points) {
   });
 }
 
+function downloadCsv(rows, filename) {
+  if (!rows.length) return;
+  const headers = Object.keys(rows[0]);
+  const body = rows.map((row) => headers.map((header) => csvCell(row[header])).join(","));
+  const blob = new Blob([[headers.join(","), ...body].join("\n")], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
+function csvCell(value) {
+  return `"${String(value ?? "").replace(/"/g, '""')}"`;
+}
+
+function formatDateTime(value, language = "en") {
+  return new Intl.DateTimeFormat(language === "zh" ? "zh-CN" : "en-NZ", {
+    dateStyle: "medium",
+    timeStyle: "short",
+    timeZone: "Pacific/Auckland",
+  }).format(new Date(value));
+}
+
 function formatShortDate(value) {
   return new Intl.DateTimeFormat("en-NZ", {
     month: "short",
@@ -634,6 +1156,11 @@ function formatShortDate(value) {
 
 function roundMoney(value) {
   return Math.round(Number(value) * 100) / 100;
+}
+
+function showSaved(setSavedNotice, text) {
+  setSavedNotice(text);
+  window.setTimeout(() => setSavedNotice(""), 1600);
 }
 
 createRoot(document.getElementById("root")).render(<App />);

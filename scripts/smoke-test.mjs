@@ -50,7 +50,7 @@ try {
 
   const js = await jsResponse.text();
   const css = await cssResponse.text();
-  const expected = ["Kiwi Supplement Watch", "Health deal monitor", "Price movement log", "Chemist Warehouse NZ", "HealthPost"];
+  const expected = ["Kiwi Supplement Watch", "NZ supplement price monitor", "Price movement", "Chemist Warehouse NZ", "HealthPost"];
   const missing = expected.filter((text) => !js.includes(text));
   if (missing.length) throw new Error(`Missing expected app text in bundle: ${missing.join(", ")}`);
   if (!css.includes(".app-shell")) throw new Error("Expected app shell styles were not present.");
