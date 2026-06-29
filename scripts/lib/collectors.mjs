@@ -341,9 +341,18 @@ export function buildDerivedData(rows, existingHistory = {}) {
 
 function appendHistory(points, row) {
   const day = row.checkedAt.slice(0, 10);
-  const next = points.filter((point) => point.date !== day);
-  next.push({ date: day, price: row.currentPrice, store: row.store });
-  return next.slice(-60);
+  const next = points.filter((point) => !(point.date === day && point.store === row.store));
+  next.push({
+    date: day,
+    checkedAt: row.checkedAt,
+    price: row.currentPrice,
+    previousPrice: row.previousPrice,
+    discount: getDiscount(row),
+    store: row.store,
+    sourceUrl: row.sourceUrl,
+  });
+  next.sort((a, b) => `${a.date}-${a.store}`.localeCompare(`${b.date}-${b.store}`));
+  return next.slice(-240);
 }
 
 async function fetchJson(url) {

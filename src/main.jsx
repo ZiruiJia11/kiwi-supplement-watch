@@ -104,6 +104,16 @@ const zh = {
   trend: "最低价与当前趋势",
   currentPrice: "当前价格",
   alertThreshold: "提醒阈值",
+  priceMovement: "价格浮动记录",
+  latestMove: "最近变动",
+  lowestPrice: "最低价",
+  highestPrice: "最高价",
+  averagePrice: "平均价",
+  noChange: "暂无变化",
+  cheaper: "降价",
+  dearer: "涨价",
+  date: "日期",
+  price: "价格",
   alertRules: "提醒规则",
   notifyText: "当收藏商品达到折扣阈值时提醒",
   discountThreshold: "折扣阈值",
@@ -155,6 +165,16 @@ const en = {
   trend: "Lowest vs current trend",
   currentPrice: "Current price",
   alertThreshold: "Alert threshold",
+  priceMovement: "Price movement log",
+  latestMove: "Latest move",
+  lowestPrice: "Lowest",
+  highestPrice: "Highest",
+  averagePrice: "Average",
+  noChange: "No change yet",
+  cheaper: "Down",
+  dearer: "Up",
+  date: "Date",
+  price: "Price",
   alertRules: "Alert rules",
   notifyText: "Notify when watched products cross your threshold",
   discountThreshold: "Discount threshold",
@@ -199,6 +219,7 @@ function App() {
   const selectedComparison = storeComparisons[selectedId] ?? [];
   const selectedDeal = deals.find((deal) => deal.canonicalId === selectedId) ?? filteredDeals[0] ?? deals[0];
   const selectedHistory = priceHistory[selectedId] ?? [];
+  const selectedHistoryStats = useMemo(() => getHistoryStats(selectedHistory), [selectedHistory]);
   const best = getBestComparison(selectedComparison);
 
   const metrics = {
@@ -416,6 +437,7 @@ function App() {
                 <span><i className="dot green"></i> {text.currentPrice}</span>
                 <span><i className="dot amber"></i> {text.alertThreshold}</span>
               </div>
+              <PriceMovementLog history={selectedHistory} stats={selectedHistoryStats} text={text} />
             </section>
 
             <section className="panel alerts-panel">
@@ -482,15 +504,68 @@ function Toggle({ icon, label, checked, onChange }) {
   );
 }
 
+function PriceMovementLog({ history, stats, text }) {
+  if (!history.length) return null;
+  const recent = sortHistory(history).slice(-6).reverse();
+  const moveClass = stats.move < 0 ? "down" : stats.move > 0 ? "up" : "";
+  const moveLabel = stats.move < 0 ? text.cheaper : stats.move > 0 ? text.dearer : text.noChange;
+  const moveText = stats.hasMove ? `${moveLabel} ${formatCurrency(Math.abs(stats.move))}` : text.noChange;
+
+  return (
+    <div className="movement-log">
+      <div className="movement-stats" aria-label={text.priceMovement}>
+        <Stat label={text.latestMove} value={moveText} tone={moveClass} />
+        <Stat label={text.lowestPrice} value={formatCurrency(stats.min)} />
+        <Stat label={text.highestPrice} value={formatCurrency(stats.max)} />
+        <Stat label={text.averagePrice} value={formatCurrency(stats.average)} />
+      </div>
+      <div className="movement-table" role="table" aria-label={text.priceMovement}>
+        <div className="movement-row head" role="row">
+          <span role="columnheader">{text.date}</span>
+          <span role="columnheader">{text.store}</span>
+          <span role="columnheader">{text.price}</span>
+        </div>
+        {recent.map((point) => (
+          <a
+            className="movement-row"
+            href={point.sourceUrl}
+            target="_blank"
+            rel="noreferrer"
+            key={`${point.date}-${point.store}-${point.price}`}
+            role="row"
+          >
+            <span role="cell">{formatShortDate(point.date)}</span>
+            <span role="cell">{point.store}</span>
+            <strong role="cell">{formatCurrency(point.price)}</strong>
+          </a>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function Stat({ label, value, tone = "" }) {
+  return (
+    <div className={`movement-stat ${tone}`}>
+      <span>{label}</span>
+      <strong>{value}</strong>
+    </div>
+  );
+}
+
 function Sparkline({ points }) {
   const width = 460;
   const height = 164;
-  if (!points.length) return <div className="empty-chart">No history yet</div>;
-  const prices = points.map((point) => point.price);
-  const min = Math.min(...prices) - 2;
-  const max = Math.max(...prices) + 2;
-  const step = width / Math.max(points.length - 1, 1);
-  const coords = points.map((point, index) => {
+  const chartPoints = getDailyLowestPoints(points);
+  if (!chartPoints.length) return <div className="empty-chart">No history yet</div>;
+  const prices = chartPoints.map((point) => point.price);
+  const minPrice = Math.min(...prices);
+  const maxPrice = Math.max(...prices);
+  const spread = Math.max(maxPrice - minPrice, 1);
+  const min = minPrice - spread * 0.16;
+  const max = maxPrice + spread * 0.16;
+  const step = width / Math.max(chartPoints.length - 1, 1);
+  const coords = chartPoints.map((point, index) => {
     const x = index * step;
     const y = height - ((point.price - min) / (max - min)) * height;
     return `${x},${y}`;
@@ -506,12 +581,59 @@ function Sparkline({ points }) {
       </defs>
       <polyline points={`0,${height} ${coords} ${width},${height}`} fill="url(#lineFill)" stroke="none" />
       <polyline points={coords} fill="none" stroke="#2e7d63" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
-      {points.map((point, index) => {
+      {chartPoints.map((point, index) => {
         const [x, y] = coords.split(" ")[index].split(",").map(Number);
         return <circle key={point.date} cx={x} cy={y} r="4.5" fill="#ffffff" stroke="#2e7d63" strokeWidth="3" />;
       })}
     </svg>
   );
+}
+
+function getHistoryStats(history) {
+  const sorted = sortHistory(history);
+  if (!sorted.length) {
+    return { min: 0, max: 0, average: 0, move: 0, hasMove: false };
+  }
+  const prices = sorted.map((point) => point.price);
+  const latest = sorted[sorted.length - 1];
+  const previous = [...sorted].slice(0, -1).reverse().find((point) => point.store === latest.store) ?? sorted[sorted.length - 2];
+  const move = previous ? roundMoney(latest.price - previous.price) : 0;
+  return {
+    min: Math.min(...prices),
+    max: Math.max(...prices),
+    average: roundMoney(prices.reduce((sum, price) => sum + price, 0) / prices.length),
+    move,
+    hasMove: Boolean(previous),
+  };
+}
+
+function getDailyLowestPoints(points) {
+  const byDate = new Map();
+  for (const point of sortHistory(points)) {
+    const existing = byDate.get(point.date);
+    if (!existing || point.price < existing.price) byDate.set(point.date, point);
+  }
+  return [...byDate.values()];
+}
+
+function sortHistory(points) {
+  return [...points].sort((a, b) => {
+    const aTime = a.checkedAt ?? a.date;
+    const bTime = b.checkedAt ?? b.date;
+    return `${aTime}-${a.store}`.localeCompare(`${bTime}-${b.store}`);
+  });
+}
+
+function formatShortDate(value) {
+  return new Intl.DateTimeFormat("en-NZ", {
+    month: "short",
+    day: "numeric",
+    timeZone: "Pacific/Auckland",
+  }).format(new Date(`${value}T00:00:00+12:00`));
+}
+
+function roundMoney(value) {
+  return Math.round(Number(value) * 100) / 100;
 }
 
 createRoot(document.getElementById("root")).render(<App />);
