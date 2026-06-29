@@ -1,0 +1,7 @@
+node_modules/
+.npm-cache/
+.vite-cache/
+.vercel/
+dist/
+*.log
+serve.*.log

@@ -1,0 +1,26 @@
+{
+  "name": "kiwi-supplement-watch",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "vite build --base ./ && node scripts/make-file-safe.mjs",
+    "serve": "node scripts/serve-dist.mjs",
+    "smoke": "node scripts/smoke-test.mjs",
+    "preview": "vite preview --host 127.0.0.1",
+    "fetch:deals": "node scripts/fetch-deals.mjs",
+    "collect:live": "node scripts/collect-live-deals.mjs",
+    "email:preview": "node scripts/render-email-preview.mjs",
+    "refresh": "npm run collect:live && npm run build && npm run email:preview"
+  },
+  "dependencies": {
+    "@vitejs/plugin-react": "^4.3.4",
+    "vite": "^6.0.7",
+    "typescript": "^5.7.2",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "lucide-react": "^0.469.0"
+  },
+  "devDependencies": {}
+}

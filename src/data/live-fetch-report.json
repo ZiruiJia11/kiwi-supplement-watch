@@ -1,0 +1,61 @@
+{
+  "generatedAt": "2026-06-29T05:49:00.789Z",
+  "results": [
+    {
+      "store": "Chemist Warehouse NZ",
+      "sourceUrl": "https://www.chemistwarehouse.co.nz/shop-online/81/vitamins",
+      "mode": "browser-or-feed",
+      "reachability": {
+        "ok": true,
+        "status": 200,
+        "checkedAt": "2026-06-29T05:48:57.941Z",
+        "finalUrl": "https://www.chemistwarehouse.co.nz/shop-online/81/vitamins",
+        "contentType": "text/html; charset=utf-8",
+        "note": "Reachable with standard fetch. Add parser for product JSON-LD or category API."
+      },
+      "extractedProducts": []
+    },
+    {
+      "store": "HealthPost",
+      "sourceUrl": "https://www.healthpost.co.nz/",
+      "mode": "browser-or-feed",
+      "reachability": {
+        "ok": true,
+        "status": 200,
+        "checkedAt": "2026-06-29T05:48:58.046Z",
+        "finalUrl": "https://www.healthpost.co.nz/",
+        "contentType": "text/html; charset=utf-8",
+        "note": "Reachable with standard fetch. Add parser for product JSON-LD or category API."
+      },
+      "extractedProducts": []
+    },
+    {
+      "store": "Bargain Chemist",
+      "sourceUrl": "https://www.bargainchemist.co.nz/",
+      "mode": "browser-or-feed",
+      "reachability": {
+        "ok": true,
+        "status": 200,
+        "checkedAt": "2026-06-29T05:48:59.260Z",
+        "finalUrl": "https://www.bargainchemist.co.nz/",
+        "contentType": "text/html; charset=utf-8",
+        "note": "Reachable with standard fetch. Add parser for product JSON-LD or category API."
+      },
+      "extractedProducts": []
+    },
+    {
+      "store": "Life Pharmacy",
+      "sourceUrl": "https://www.lifepharmacy.co.nz/",
+      "mode": "browser-or-feed",
+      "reachability": {
+        "ok": true,
+        "status": 200,
+        "checkedAt": "2026-06-29T05:48:59.493Z",
+        "finalUrl": "https://www.lifepharmacy.co.nz/",
+        "contentType": "text/html; charset=utf-8",
+        "note": "Reachable with standard fetch. Add parser for product JSON-LD or category API."
+      },
+      "extractedProducts": []
+    }
+  ]
+}
