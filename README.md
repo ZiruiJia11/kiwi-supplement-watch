@@ -2,6 +2,11 @@
 
 MVP dashboard for monitoring New Zealand supplement discounts, comparing stores, keeping price history, and preparing alert rules.
 
+## Links
+
+- Live site: https://kiwi-supplement-watch.vercel.app
+- GitHub repository: https://github.com/ZiruiJia11/kiwi-supplement-watch
+
 ## Complete local workflow
 
 ```powershell
@@ -22,9 +27,11 @@ Before the first live refresh, the UI uses seeded rows so the product experience
 The live-data boundary is in `scripts/collect-live-deals.mjs` and `scripts/lib/collectors.mjs`. The collector currently uses:
 
 - HealthPost: Shopify search suggest JSON for real product/price records.
-- Bargain Chemist: Shopify collection JSON for real product/price records.
-- Chemist Warehouse NZ: HTML category reachability plus an experimental parser.
-- Life Pharmacy: reachability status until a permitted feed/parser is confirmed.
+- Bargain Chemist: Shopify search suggest JSON for real product/price records.
+- Chemist Warehouse NZ: public predictive search JSON and search API data used by its storefront.
+- Life Pharmacy: Shopify search suggest JSON for real product/price records.
+
+The product priority model currently favours fish oil, eye health, sunscreen, vitamins, probiotics, calcium/bone, sleep support, liver support, CoQ10/heart health, beauty collagen, and joint support.
 
 Production use should add or harden one adapter per retailer using the most compliant available source:
 
