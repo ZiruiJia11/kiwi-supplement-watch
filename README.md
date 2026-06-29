@@ -34,15 +34,15 @@ Each daily run:
 - runs the smoke test with `npm run smoke`
 - commits the refreshed `src/data/live-deals.json` back to GitHub when data changes
 
-To make the public Vercel URL update automatically after each refresh, use one of these options:
+The current production Vercel project is connected to this GitHub repository, so every data-refresh commit should trigger a production deployment to the public URL.
 
-1. Connect the GitHub repository to the Vercel project, so every data-refresh commit triggers a production deployment.
-2. Add these GitHub repository secrets and let the workflow deploy directly to Vercel:
+As a fallback, the workflow can also deploy directly to Vercel if these GitHub repository secrets are added:
+
    - `VERCEL_TOKEN`
    - `VERCEL_ORG_ID`
    - `VERCEL_PROJECT_ID`
 
-Without one of those Vercel deployment connections, GitHub data will still refresh daily, but the public website will only update after a manual Vercel deploy.
+Without the Vercel Git connection or those secrets, GitHub data will still refresh daily, but the public website will only update after a manual Vercel deploy.
 
 ## What is real vs seeded
 
