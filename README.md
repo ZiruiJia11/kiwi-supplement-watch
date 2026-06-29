@@ -20,6 +20,30 @@ Open:
 - `dist/index.html` for the dashboard
 - `dist/alert-email-preview.html` for the email alert preview
 
+## Daily automatic updates
+
+The repository includes a GitHub Actions workflow at `.github/workflows/daily-refresh.yml`.
+
+It runs every day at `20:00 UTC`, which is roughly `08:00` in New Zealand standard time and `09:00` during daylight saving time. It can also be started manually from the GitHub Actions tab with `workflow_dispatch`.
+
+Each daily run:
+
+- installs dependencies with `npm ci`
+- collects live prices with `npm run collect:live`
+- rebuilds the dashboard with `npm run build`
+- runs the smoke test with `npm run smoke`
+- commits the refreshed `src/data/live-deals.json` back to GitHub when data changes
+
+To make the public Vercel URL update automatically after each refresh, use one of these options:
+
+1. Connect the GitHub repository to the Vercel project, so every data-refresh commit triggers a production deployment.
+2. Add these GitHub repository secrets and let the workflow deploy directly to Vercel:
+   - `VERCEL_TOKEN`
+   - `VERCEL_ORG_ID`
+   - `VERCEL_PROJECT_ID`
+
+Without one of those Vercel deployment connections, GitHub data will still refresh daily, but the public website will only update after a manual Vercel deploy.
+
 ## What is real vs seeded
 
 Before the first live refresh, the UI uses seeded rows so the product experience is usable immediately. Seeded rows are marked with `sourceStatus: "seeded"` and link to the retailer source. They are not presented as live prices.
