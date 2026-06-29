@@ -20,6 +20,14 @@ Open:
 - `dist/index.html` for the dashboard
 - `dist/alert-email-preview.html` for the email alert preview
 
+## Data loading
+
+Live deal data is stored in `src/data/live-deals.json` as the committed source dataset. During `npm run build`, `scripts/copy-live-data.mjs` copies it to `public/data/live-deals.json`, and Vite publishes it as `dist/data/live-deals.json`.
+
+The React app fetches `/data/live-deals.json` at runtime instead of importing the full live dataset into the JavaScript bundle. If that request fails, the app falls back to the small seeded dataset in `src/data/deals.js` so the dashboard still renders.
+
+This keeps the production JavaScript bundle small while allowing daily data refreshes to publish a standalone JSON file.
+
 ## Daily automatic updates
 
 The repository includes a GitHub Actions workflow at `.github/workflows/daily-refresh.yml`.

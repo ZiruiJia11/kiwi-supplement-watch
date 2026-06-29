@@ -26,7 +26,7 @@ import {
   WifiOff,
   X,
 } from "lucide-react";
-import { getDashboardData } from "./lib/liveData.js";
+import { getFallbackDashboardData, loadDashboardData } from "./lib/liveData.js";
 import {
   formatCurrency,
   freshnessLabel,
@@ -36,8 +36,6 @@ import {
   getUnitPrice,
 } from "./lib/pricing.js";
 import "./styles.css";
-
-const dashboardData = getDashboardData();
 
 const CATEGORY_ORDER = [
   "Fish oil",
@@ -246,6 +244,8 @@ const DEFAULT_ALERTS = {
 };
 
 function App() {
+  const [dashboardData, setDashboardData] = useState(() => getFallbackDashboardData());
+  const [dataStatus, setDataStatus] = useState("loading");
   const { deals, priceHistory, storeComparisons, sourceHealth, alerts, generatedAt, mode, isLive } = dashboardData;
   const [preferences, setPreferences] = useStoredState("ksw-preferences", DEFAULT_PREFERENCES);
   const [alertSettings, setAlertSettings] = useStoredState("ksw-alerts", DEFAULT_ALERTS);
@@ -259,6 +259,18 @@ function App() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [savedNotice, setSavedNotice] = useState("");
   const text = COPY[preferences.language];
+
+  useEffect(() => {
+    let active = true;
+    loadDashboardData().then((data) => {
+      if (!active) return;
+      setDashboardData(data);
+      setDataStatus(data.isLive ? "live" : "fallback");
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const stores = useMemo(() => ["All stores", ...new Set(deals.map((deal) => deal.store))], [deals]);
   const categories = useMemo(() => {
@@ -400,7 +412,7 @@ function App() {
             <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={text.search} />
           </div>
           <div className="top-actions">
-            <StatusPill tone={isLive ? "ok" : "muted"} label={isLive ? text.liveData : text.demoData} />
+            <StatusPill tone={isLive ? "ok" : "muted"} label={dataStatus === "loading" ? "Loading" : isLive ? text.liveData : text.demoData} />
             <button className="text-button" onClick={() => updatePreferences({ language: preferences.language === "zh" ? "en" : "zh" })}>
               <Globe2 size={16} />
               {preferences.language === "zh" ? "EN" : "中文"}

@@ -3,5 +3,6 @@ node_modules/
 .vite-cache/
 .vercel/
 dist/
+public/data/live-deals.json
 *.log
 serve.*.log

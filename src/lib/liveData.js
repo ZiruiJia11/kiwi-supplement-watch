@@ -1,18 +1,43 @@
-import seeded from "../data/live-deals.json";
 import { deals as fallbackDeals, priceHistory as fallbackHistory, storeComparisons as fallbackComparisons } from "../data/deals.js";
 
-export function getDashboardData() {
-  const liveDeals = Array.isArray(seeded.deals) ? seeded.deals : [];
+const liveDataUrl = `${import.meta.env.BASE_URL}data/live-deals.json`;
+
+export function getFallbackDashboardData() {
+  return {
+    generatedAt: null,
+    mode: "seeded-demo",
+    deals: fallbackDeals,
+    priceHistory: fallbackHistory,
+    storeComparisons: fallbackComparisons,
+    sourceHealth: [],
+    alerts: [],
+    isLive: false,
+  };
+}
+
+export async function loadDashboardData() {
+  try {
+    const response = await fetch(liveDataUrl, { cache: "no-store" });
+    if (!response.ok) throw new Error(`Live data request failed: ${response.status}`);
+    return toDashboardData(await response.json());
+  } catch {
+    return getFallbackDashboardData();
+  }
+}
+
+function toDashboardData(payload) {
+  const liveDeals = Array.isArray(payload?.deals) ? payload.deals : [];
   const hasLiveRows = liveDeals.length > 0;
+  if (!hasLiveRows) return getFallbackDashboardData();
 
   return {
-    generatedAt: seeded.generatedAt,
-    mode: hasLiveRows ? seeded.mode : "seeded-demo",
-    deals: hasLiveRows ? liveDeals : fallbackDeals,
-    priceHistory: hasLiveRows ? seeded.history ?? {} : fallbackHistory,
-    storeComparisons: hasLiveRows ? seeded.comparisons ?? {} : fallbackComparisons,
-    sourceHealth: seeded.sourceHealth ?? [],
-    alerts: seeded.alerts ?? [],
-    isLive: hasLiveRows,
+    generatedAt: payload.generatedAt,
+    mode: payload.mode,
+    deals: liveDeals,
+    priceHistory: payload.history ?? {},
+    storeComparisons: payload.comparisons ?? {},
+    sourceHealth: payload.sourceHealth ?? [],
+    alerts: payload.alerts ?? [],
+    isLive: true,
   };
 }
