@@ -39,6 +39,8 @@ Retailer endpoints can rate-limit or block server requests. Recent examples:
 
 When a source fails, the collector keeps rows from the previous successful dataset for that store and marks them with `sourceStatus: "stale"`. Stale rows are still real historical rows, but they are not presented as freshly verified prices. The Sources view shows whether each source is `OK`, `Stale`, or `Failed`.
 
+The collector currently keeps up to 1,200 selected rows and reserves baseline coverage per store before filling the rest by priority and discount. This avoids one retailer disappearing just because higher-priority rows from other stores filled the dataset first.
+
 ## Daily automatic updates
 
 The repository includes a GitHub Actions workflow at `.github/workflows/daily-refresh.yml`.

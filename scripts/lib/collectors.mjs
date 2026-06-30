@@ -59,6 +59,9 @@ const CATEGORY_PATTERNS = [
 ];
 
 const PRIORITY_BY_CATEGORY = Object.fromEntries(PRIORITY_CATEGORIES.map((item) => [item.category, item.priority]));
+const MAX_SELECTED_ROWS = 1200;
+const CATEGORY_ROW_LIMIT = 70;
+const MIN_ROWS_PER_STORE = 80;
 
 export async function collectAllSources() {
   const checkedAt = new Date().toISOString();
@@ -118,6 +121,7 @@ async function collectShopifySearch(source, checkedAt) {
     const json = await fetchJson(url);
     const products = json?.resources?.results?.products ?? [];
     rows.push(...products.map((product) => fromSearchProduct(source, product, checkedAt, term, category)));
+    await sleep(120);
   }
   return rows.filter(Boolean);
 }
@@ -176,6 +180,7 @@ async function collectChemistWarehousePredictive(source, checkedAt) {
     const url = `${source.url}?term=${encodeURIComponent(search.term)}`;
     const products = await fetchJson(url);
     rows.push(...products.map((product) => fromChemistPredictiveProduct(source, product, checkedAt, search.term, search.category)).filter(Boolean));
+    await sleep(120);
   }
   return rows;
 }
@@ -435,18 +440,31 @@ function dedupeRows(rows) {
   const sorted = [...seen.values()].sort((a, b) => (b.priority - a.priority) || (getDiscount(b) - getDiscount(a)));
   const selected = [];
   const selectedKeys = new Set();
+
+  for (const store of SOURCES.map((source) => source.store)) {
+    const storeRows = sorted.filter((row) => row.store === store).slice(0, MIN_ROWS_PER_STORE);
+    for (const row of storeRows) addSelectedRow(row, selected, selectedKeys);
+  }
+
   for (const category of PRIORITY_CATEGORIES.map((item) => item.category)) {
-    const categoryRows = sorted.filter((row) => row.category === category).slice(0, 45);
+    const categoryRows = sorted.filter((row) => row.category === category).slice(0, CATEGORY_ROW_LIMIT);
     for (const row of categoryRows) {
-      selected.push(row);
-      selectedKeys.add(row.id);
+      addSelectedRow(row, selected, selectedKeys);
     }
   }
+
   for (const row of sorted) {
-    if (selected.length >= 500) break;
-    if (!selectedKeys.has(row.id)) selected.push(row);
+    if (selected.length >= MAX_SELECTED_ROWS) break;
+    addSelectedRow(row, selected, selectedKeys);
   }
+
   return selected.sort((a, b) => (b.priority - a.priority) || (getDiscount(b) - getDiscount(a)));
+}
+
+function addSelectedRow(row, selected, selectedKeys) {
+  if (selectedKeys.has(row.id)) return;
+  selected.push(row);
+  selectedKeys.add(row.id);
 }
 
 function getDiscount(row) {

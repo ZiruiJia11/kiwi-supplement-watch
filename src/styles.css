@@ -851,13 +851,19 @@ tbody tr:hover,
 }
 
 .history-row strong,
-.history-row span {
+.history-row span,
+.history-row small {
   display: block;
 }
 
-.history-row span {
+.history-row span,
+.history-row small {
   color: var(--muted);
   font-size: 12px;
+}
+
+.history-row small {
+  margin-top: 2px;
 }
 
 .history-row > strong {

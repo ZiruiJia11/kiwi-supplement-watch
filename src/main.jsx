@@ -27,7 +27,7 @@ import {
   WifiOff,
   X,
 } from "lucide-react";
-import { getFallbackDashboardData, loadDashboardData } from "./lib/liveData.js";
+import { cacheManualDashboardData, getFallbackDashboardData, loadDashboardData } from "./lib/liveData.js";
 import {
   formatCurrency,
   freshnessLabel,
@@ -69,6 +69,24 @@ const CATEGORY_ZH = {
   "Joint support": "关节支持",
   Other: "其他",
 };
+
+const PRODUCT_TERM_ZH = [
+  [/fish oil|omega[- ]?3|dha|epa/i, "鱼油 / Omega-3"],
+  [/lutein|zeaxanthin|bilberry|eye|vision|macula|retina/i, "护眼营养"],
+  [/sunscreen|sunblock|spf|anthelios|sun gel|zinc sunscreen/i, "防晒"],
+  [/vitamin c|ascorb/i, "维生素 C"],
+  [/vitamin d/i, "维生素 D"],
+  [/vitamin b|b complex/i, "维生素 B"],
+  [/multivitamin|multi[- ]?vitamin/i, "复合维生素"],
+  [/probiotic|inner health|gut health|acidophilus|lactobacillus|digestive/i, "益生菌 / 肠道健康"],
+  [/calcium|bone|osteo/i, "钙 / 骨骼健康"],
+  [/magnesium|sleep|melatonin|relax|rest/i, "镁 / 睡眠支持"],
+  [/milk thistle|liver|turmeric|curcumin/i, "护肝 / 姜黄"],
+  [/coq10|coenzyme q10|heart|cardio/i, "辅酶 Q10 / 心血管"],
+  [/collagen|hair skin nails|beauty/i, "胶原蛋白 / 美容"],
+  [/glucosamine|chondroitin|joint|arthritis/i, "关节支持"],
+  [/cleanser|cleansing bar/i, "清洁护理"],
+];
 
 const COPY = {
   en: {
@@ -343,6 +361,8 @@ function App() {
     return preferences.language === "zh" ? CATEGORY_ZH[value] ?? value : value;
   };
 
+  const productLabel = (deal) => getLocalizedProductLabel(deal, preferences.language);
+
   const storeLabel = (value) => value === "All stores" ? text.allStores : value;
 
   const toggleWatch = (id) => {
@@ -372,6 +392,7 @@ function App() {
       });
       if (!response.ok) throw new Error(`Refresh failed: ${response.status}`);
       const data = await response.json();
+      cacheManualDashboardData(data);
       setDashboardData({
         generatedAt: data.generatedAt,
         mode: data.mode,
@@ -506,6 +527,8 @@ function App() {
                 watchlist={watchlist}
                 onSelect={setSelectedId}
                 onWatch={toggleWatch}
+                categoryLabel={categoryLabel}
+                productLabel={productLabel}
                 emptyText={text.noRows}
               />
             )}
@@ -518,6 +541,8 @@ function App() {
                 watchlist={watchlist}
                 onSelect={setSelectedId}
                 onWatch={toggleWatch}
+                categoryLabel={categoryLabel}
+                productLabel={productLabel}
                 emptyText={text.noWatchlist}
               />
             )}
@@ -529,6 +554,7 @@ function App() {
                 priceHistory={priceHistory}
                 historyRange={preferences.historyRange}
                 onSelect={setSelectedId}
+                productLabel={productLabel}
               />
             )}
 
@@ -546,6 +572,8 @@ function App() {
                 selectedId={selectedDeal?.canonicalId}
                 onSelect={setSelectedId}
                 onWatch={toggleWatch}
+                categoryLabel={categoryLabel}
+                productLabel={productLabel}
                 savedNotice={savedNotice}
                 onSave={saveAlerts}
               />
@@ -563,6 +591,8 @@ function App() {
             history={selectedHistory}
             stats={selectedStats}
             best={best}
+            categoryLabel={categoryLabel}
+            productLabel={productLabel}
             watchlist={watchlist}
             alertSettings={alertSettings}
             setAlertSettings={setAlertSettings}
@@ -632,7 +662,7 @@ function FilterBar({
   );
 }
 
-function DealsTable({ rows, text, selectedId, watchlist, onSelect, onWatch, emptyText }) {
+function DealsTable({ rows, text, selectedId, watchlist, onSelect, onWatch, categoryLabel, productLabel, emptyText }) {
   if (!rows.length) {
     return <EmptyState icon={<Search size={20} />} text={emptyText} />;
   }
@@ -674,7 +704,7 @@ function DealsTable({ rows, text, selectedId, watchlist, onSelect, onWatch, empt
                   <div>
                     <strong>{deal.brand}</strong>
                     <span>{deal.productName}</span>
-                    <small>{deal.category} · {deal.size}</small>
+                    <small>{productLabel(deal)} · {categoryLabel(deal.category)} · {deal.size}</small>
                   </div>
                 </div>
               </td>
@@ -697,7 +727,7 @@ function DealsTable({ rows, text, selectedId, watchlist, onSelect, onWatch, empt
   );
 }
 
-function DetailPanel({ text, deal, comparison, history, stats, best, watchlist, alertSettings, setAlertSettings, onWatch, onSaveAlerts, savedNotice }) {
+function DetailPanel({ text, deal, comparison, history, stats, best, categoryLabel, productLabel, watchlist, alertSettings, setAlertSettings, onWatch, onSaveAlerts, savedNotice }) {
   if (!deal) return null;
   const watched = watchlist.has(deal.canonicalId);
 
@@ -712,7 +742,7 @@ function DetailPanel({ text, deal, comparison, history, stats, best, watchlist, 
       <div className="detail-product">
         <strong>{deal.brand}</strong>
         <h2>{deal.productName}</h2>
-        <p>{deal.category} · {deal.size} · {getUnitPrice(deal)}</p>
+        <p>{productLabel(deal)} · {categoryLabel(deal.category)} · {deal.size} · {getUnitPrice(deal)}</p>
       </div>
 
       <div className="best-price">
@@ -769,13 +799,14 @@ function DetailPanel({ text, deal, comparison, history, stats, best, watchlist, 
   );
 }
 
-function HistoryView({ text, deals, priceHistory, historyRange, onSelect }) {
+function HistoryView({ text, deals, priceHistory, historyRange, onSelect, productLabel }) {
   const rows = deals.flatMap((deal) =>
     filterHistory(priceHistory[deal.canonicalId] ?? [], historyRange).map((point) => ({
       ...point,
       canonicalId: deal.canonicalId,
       brand: deal.brand,
       productName: deal.productName,
+      localizedName: productLabel(deal),
       category: deal.category,
     }))
   ).sort((a, b) => `${b.checkedAt ?? b.date}`.localeCompare(`${a.checkedAt ?? a.date}`));
@@ -796,6 +827,7 @@ function HistoryView({ text, deals, priceHistory, historyRange, onSelect }) {
             <div>
               <strong>{row.brand}</strong>
               <span>{row.productName}</span>
+              <small>{row.localizedName}</small>
             </div>
             <span>{row.store}</span>
             <span>{formatShortDate(row.date)}</span>
@@ -849,7 +881,7 @@ function StoresView({ text, deals, sourceHealth }) {
   );
 }
 
-function AlertsView({ text, alertSettings, setAlertSettings, deals, watchlist, selectedId, onSelect, onWatch, savedNotice, onSave }) {
+function AlertsView({ text, alertSettings, setAlertSettings, deals, watchlist, selectedId, onSelect, onWatch, categoryLabel, productLabel, savedNotice, onSave }) {
   const matches = deals
     .filter((deal) => getDiscount(deal) >= alertSettings.threshold)
     .filter((deal) => !watchlist.size || watchlist.has(deal.canonicalId))
@@ -883,7 +915,17 @@ function AlertsView({ text, alertSettings, setAlertSettings, deals, watchlist, s
         </button>
         <small>{text.localOnly}</small>
       </div>
-      <DealsTable rows={matches} text={text} selectedId={selectedId} watchlist={watchlist} onSelect={onSelect} onWatch={onWatch} emptyText={text.noRows} />
+      <DealsTable
+        rows={matches}
+        text={text}
+        selectedId={selectedId}
+        watchlist={watchlist}
+        onSelect={onSelect}
+        onWatch={onWatch}
+        categoryLabel={categoryLabel}
+        productLabel={productLabel}
+        emptyText={text.noRows}
+      />
     </div>
   );
 }
@@ -1098,6 +1140,13 @@ function getSourceStatus(source, text) {
   if (source?.ok) return { tone: "ok", label: text.ok };
   if (source?.staleRows > 0) return { tone: "stale", label: text.stale };
   return { tone: "fail", label: text.failed };
+}
+
+function getLocalizedProductLabel(deal, language) {
+  if (language !== "zh") return deal.category;
+  const haystack = `${deal.brand} ${deal.productName} ${deal.category}`;
+  const match = PRODUCT_TERM_ZH.find(([pattern]) => pattern.test(haystack));
+  return match?.[1] ?? CATEGORY_ZH[deal.category] ?? deal.category;
 }
 
 function useStoredState(key, initialValue) {
