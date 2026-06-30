@@ -339,6 +339,42 @@ export function buildDerivedData(rows, existingHistory = {}) {
   return { comparisons, history, alerts };
 }
 
+export function mergeWithStaleFallback(rows, sourceHealth, previousDeals = []) {
+  const nextRows = [...rows];
+  const currentStores = new Set(rows.map((row) => row.store));
+  const previousByStore = groupPreviousDealsByStore(previousDeals);
+
+  const nextSourceHealth = sourceHealth.map((source) => {
+    if (source.ok || currentStores.has(source.store)) return source;
+    const staleRows = previousByStore.get(source.store) ?? [];
+    if (!staleRows.length) return source;
+
+    nextRows.push(...staleRows.map((row) => ({
+      ...row,
+      id: `${row.id}-stale`,
+      sourceStatus: "stale",
+      staleReason: source.note,
+    })));
+
+    return {
+      ...source,
+      staleRows: staleRows.length,
+      note: `${source.note}; using ${staleRows.length} stale rows from the previous successful dataset.`,
+    };
+  });
+
+  return { rows: dedupeRows(nextRows), sourceHealth: nextSourceHealth };
+}
+
+function groupPreviousDealsByStore(previousDeals) {
+  const grouped = new Map();
+  for (const row of previousDeals) {
+    if (!row?.store || !row?.canonicalId) continue;
+    grouped.set(row.store, [...(grouped.get(row.store) ?? []), row]);
+  }
+  return grouped;
+}
+
 function appendHistory(points, row) {
   const day = row.checkedAt.slice(0, 10);
   const next = points.filter((point) => !(point.date === day && point.store === row.store));

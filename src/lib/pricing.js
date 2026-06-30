@@ -23,7 +23,12 @@ export function getUnitPrice(deal) {
 export function freshnessLabel(deal) {
   if (deal.sourceStatus === "seeded") return "seeded";
   if (deal.sourceStatus === "verified") return "verified";
+  if (deal.sourceStatus === "stale") return "stale";
   return "pending";
+}
+
+export function isTrustedSourceStatus(status) {
+  return status === "verified" || status === "stale";
 }
 
 export function getBestComparison(rows) {

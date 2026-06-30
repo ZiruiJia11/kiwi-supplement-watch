@@ -1,14 +1,15 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
-import { buildDerivedData, collectAllSources } from "./lib/collectors.mjs";
+import { buildDerivedData, collectAllSources, mergeWithStaleFallback } from "./lib/collectors.mjs";
 
 const outPath = resolve("src/data/live-deals.json");
 const previous = await readPrevious(outPath);
-const { checkedAt, rows, sourceHealth } = await collectAllSources();
+const collected = await collectAllSources();
+const { rows, sourceHealth } = mergeWithStaleFallback(collected.rows, collected.sourceHealth, previous.deals ?? []);
 const derived = buildDerivedData(rows, previous.history ?? {});
 
 const payload = {
-  generatedAt: checkedAt,
+  generatedAt: collected.checkedAt,
   mode: "live-fetch",
   deals: rows,
   comparisons: derived.comparisons,

@@ -13,6 +13,7 @@ import {
   Globe2,
   HeartPulse,
   Mail,
+  RefreshCw,
   Search,
   Send,
   Settings,
@@ -34,6 +35,7 @@ import {
   getDiscount,
   getPriceDrop,
   getUnitPrice,
+  isTrustedSourceStatus,
 } from "./lib/pricing.js";
 import "./styles.css";
 
@@ -83,7 +85,7 @@ const COPY = {
     demoData: "Demo data",
     lastChecked: "Last checked",
     products: "Products",
-    healthySources: "Healthy sources",
+    healthySources: "Available sources",
     activeAlerts: "Alert matches",
     tracked: "Tracked",
     allStores: "All stores",
@@ -117,6 +119,10 @@ const COPY = {
     email: "Email",
     telegram: "Telegram",
     saveSettings: "Save settings",
+    refreshData: "Refresh data",
+    refreshing: "Refreshing",
+    refreshFailed: "Refresh failed",
+    refreshedNow: "Refreshed",
     settings: "Settings",
     preferences: "Preferences",
     language: "Language",
@@ -137,6 +143,7 @@ const COPY = {
     checkedAt: "Checked at",
     ok: "OK",
     failed: "Failed",
+    stale: "Stale",
     saved: "Saved",
     openSource: "Open source",
     lower: "down",
@@ -158,7 +165,7 @@ const COPY = {
     demoData: "示例数据",
     lastChecked: "最近更新",
     products: "商品",
-    healthySources: "正常来源",
+    healthySources: "可用来源",
     activeAlerts: "符合提醒",
     tracked: "关注中",
     allStores: "全部商店",
@@ -192,6 +199,10 @@ const COPY = {
     email: "邮件",
     telegram: "Telegram",
     saveSettings: "保存设置",
+    refreshData: "手动刷新",
+    refreshing: "刷新中",
+    refreshFailed: "刷新失败",
+    refreshedNow: "已刷新",
     settings: "设置",
     preferences: "偏好设置",
     language: "语言",
@@ -212,6 +223,7 @@ const COPY = {
     checkedAt: "抓取时间",
     ok: "正常",
     failed: "失败",
+    stale: "旧数据",
     saved: "已保存",
     openSource: "打开来源",
     lower: "降价",
@@ -258,6 +270,7 @@ function App() {
   const [selectedId, setSelectedId] = useState(deals[0]?.canonicalId ?? "");
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [savedNotice, setSavedNotice] = useState("");
+  const [refreshState, setRefreshState] = useState("idle");
   const text = COPY[preferences.language];
 
   useEffect(() => {
@@ -290,7 +303,7 @@ function App() {
     return decoratedDeals
       .filter((deal) => storeFilter === "All stores" || deal.store === storeFilter)
       .filter((deal) => categoryFilter === "All categories" || deal.category === categoryFilter)
-      .filter((deal) => !preferences.verifiedOnly || deal.sourceStatus === "verified")
+      .filter((deal) => !preferences.verifiedOnly || isTrustedSourceStatus(deal.sourceStatus))
       .filter((deal) => !discountOnly || getDiscount(deal) > 0)
       .filter((deal) => {
         const haystack = `${deal.brand} ${deal.productName} ${deal.store} ${deal.category}`.toLowerCase();
@@ -316,7 +329,7 @@ function App() {
 
   const metrics = {
     products: deals.length,
-    sources: sourceHealth.filter((source) => source.ok).length,
+    sources: sourceHealth.filter((source) => source.ok || source.staleRows > 0).length,
     alerts: alerts.length || decoratedDeals.filter((deal) => getDiscount(deal) >= alertSettings.threshold).length,
     watched: watchlist.size,
   };
@@ -348,6 +361,34 @@ function App() {
   const saveAlerts = () => {
     setAlertSettings({ ...alertSettings });
     showSaved(setSavedNotice, text.saved);
+  };
+
+  const refreshLiveData = async () => {
+    setRefreshState("loading");
+    try {
+      const response = await fetch(`${import.meta.env.BASE_URL}api/refresh`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+      });
+      if (!response.ok) throw new Error(`Refresh failed: ${response.status}`);
+      const data = await response.json();
+      setDashboardData({
+        generatedAt: data.generatedAt,
+        mode: data.mode,
+        deals: data.deals ?? [],
+        priceHistory: data.history ?? {},
+        storeComparisons: data.comparisons ?? {},
+        sourceHealth: data.sourceHealth ?? [],
+        alerts: data.alerts ?? [],
+        isLive: Array.isArray(data.deals) && data.deals.length > 0,
+      });
+      setDataStatus("live");
+      setRefreshState("done");
+      window.setTimeout(() => setRefreshState("idle"), 1800);
+    } catch {
+      setRefreshState("error");
+      window.setTimeout(() => setRefreshState("idle"), 2400);
+    }
   };
 
   const exportCsv = () => {
@@ -396,7 +437,7 @@ function App() {
         <div className="sidebar-status">
           <div>
             <span>{isLive ? text.liveData : text.demoData}</span>
-            <strong>{sourceHealth.filter((source) => source.ok).length}/{Math.max(sourceHealth.length, 1)} {text.sources}</strong>
+            <strong>{sourceHealth.filter((source) => source.ok || source.staleRows > 0).length}/{Math.max(sourceHealth.length, 1)} {text.sources}</strong>
           </div>
           <div>
             <span>{text.lastChecked}</span>
@@ -413,6 +454,10 @@ function App() {
           </div>
           <div className="top-actions">
             <StatusPill tone={isLive ? "ok" : "muted"} label={dataStatus === "loading" ? "Loading" : isLive ? text.liveData : text.demoData} />
+            <button className="text-button" onClick={refreshLiveData} disabled={refreshState === "loading"}>
+              <RefreshCw size={16} className={refreshState === "loading" ? "spin" : ""} />
+              {refreshState === "loading" ? text.refreshing : refreshState === "done" ? text.refreshedNow : refreshState === "error" ? text.refreshFailed : text.refreshData}
+            </button>
             <button className="text-button" onClick={() => updatePreferences({ language: preferences.language === "zh" ? "en" : "zh" })}>
               <Globe2 size={16} />
               {preferences.language === "zh" ? "EN" : "中文"}
@@ -425,7 +470,7 @@ function App() {
 
         <section className="metric-strip" aria-label="Dashboard summary">
           <Metric label={text.products} value={metrics.products} />
-          <Metric label={text.healthySources} value={`${metrics.sources}/${sourceHealth.length || 4}`} tone="ok" />
+                <Metric label={text.healthySources} value={`${metrics.sources}/${sourceHealth.length || 4}`} tone="ok" />
           <Metric label={text.activeAlerts} value={metrics.alerts} tone="warn" />
           <Metric label={text.tracked} value={metrics.watched} tone="accent" />
         </section>
@@ -783,11 +828,12 @@ function StoresView({ text, deals, sourceHealth }) {
       <div className="store-grid">
         {stores.map((store) => {
           const health = sourceHealth.find((source) => source.store === store.store);
+          const status = getSourceStatus(health, text);
           return (
             <article className="store-card" key={store.store}>
               <div className="store-card-head">
                 <strong>{store.store}</strong>
-                <span className={health?.ok ? "status ok" : "status fail"}>{health?.ok ? text.ok : text.failed}</span>
+                <span className={`status ${status.tone}`}>{status.label}</span>
               </div>
               <div className="store-card-stats">
                 <Stat label={text.products} value={store.count} />
@@ -863,11 +909,11 @@ function SourcesView({ text, sourceHealth, mode, generatedAt, language }) {
         {sourceHealth.map((source) => (
           <a className="source-row" href={source.sourceUrl} target="_blank" rel="noreferrer" key={source.id}>
             <strong>{source.store}</strong>
-            <span className={source.ok ? "status ok" : "status fail"}>
+            <span className={`status ${getSourceStatus(source, text).tone}`}>
               {source.ok ? <Wifi size={14} /> : <WifiOff size={14} />}
-              {source.ok ? text.ok : text.failed}
+              {getSourceStatus(source, text).label}
             </span>
-            <span>{source.extracted}</span>
+            <span>{source.extracted}{source.staleRows ? ` + ${source.staleRows}` : ""}</span>
             <span>{source.checkedAt ? formatDateTime(source.checkedAt, language) : "--"}</span>
             <small>{source.note}</small>
           </a>
@@ -1046,6 +1092,12 @@ function EmptyState({ icon, text }) {
       <span>{text}</span>
     </div>
   );
+}
+
+function getSourceStatus(source, text) {
+  if (source?.ok) return { tone: "ok", label: text.ok };
+  if (source?.staleRows > 0) return { tone: "stale", label: text.stale };
+  return { tone: "fail", label: text.failed };
 }
 
 function useStoredState(key, initialValue) {

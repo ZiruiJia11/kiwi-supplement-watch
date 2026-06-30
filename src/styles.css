@@ -225,6 +225,21 @@ a {
   font-weight: 700;
 }
 
+.text-button:disabled {
+  cursor: wait;
+  opacity: 0.72;
+}
+
+.spin {
+  animation: spin 900ms linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .primary-button {
   width: 100%;
   border: 0;
@@ -898,6 +913,11 @@ tbody tr:hover,
 .status.fail {
   background: var(--red-soft);
   color: var(--red);
+}
+
+.status.stale {
+  background: var(--amber-soft);
+  color: var(--amber);
 }
 
 .settings-card {

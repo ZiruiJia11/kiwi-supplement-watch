@@ -28,6 +28,17 @@ The React app fetches `/data/live-deals.json` at runtime instead of importing th
 
 This keeps the production JavaScript bundle small while allowing daily data refreshes to publish a standalone JSON file.
 
+## Manual refresh and stale fallback
+
+The deployed app exposes `POST /api/refresh` on Vercel. The dashboard's manual refresh button calls this endpoint, runs the live collectors, and updates the current browser session with the fresh result.
+
+Retailer endpoints can rate-limit or block server requests. Recent examples:
+
+- `429` from Shopify search suggest endpoints when a retailer rate-limits requests.
+- `403` from Chemist Warehouse when its storefront blocks the runtime.
+
+When a source fails, the collector keeps rows from the previous successful dataset for that store and marks them with `sourceStatus: "stale"`. Stale rows are still real historical rows, but they are not presented as freshly verified prices. The Sources view shows whether each source is `OK`, `Stale`, or `Failed`.
+
 ## Daily automatic updates
 
 The repository includes a GitHub Actions workflow at `.github/workflows/daily-refresh.yml`.
